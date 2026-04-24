@@ -153,6 +153,36 @@ Eu tinha afirmado no turn 3 que "steps 3+ da jornada são majoritariamente canal
 
 **Decisão pendente (turn 5):** Locar step 2 em qual canal — opções abaixo pro Romeu escolher.
 
+### 2026-04-24 — Decisão 1 LOCKED — Canal B (Wedge "Abra/Regularize CNPJ grátis")
+
+**Decision:** Step 2 da jornada = wedge de abrir/regularizar CNPJ. Romeu respondeu "b" no turn 6 (primeiro turn da sessão local pós-handoff).
+
+**Opções consideradas (consolidadas do research + briefing ULTRAPLAN):**
+- A — Contador Indicação (B2B2C, strongest research evidence)
+- B — **Wedge CNPJ (escolhido)**
+- C — Multi-canal paralelo A+B
+- D — Não locar, mais research
+
+**Opções #3/#4 do research (LinkedIn founder content, Sebrae/comunidades) foram conscientemente omitidas** porque research marcou "hypothesis only, precedentes thin" — não maduro pra lock. Ficam como fallback, não como opção de lock.
+
+**Why:**
+- Evita dinâmica B2B2C (1 persona vs 2) — simplifica Phase 2 flowchart materialmente.
+- Elimina gatekeeper com incentivo parcialmente adversarial (contador perde billable hours se cliente automatiza).
+- Precedente existente: Contabilizei construiu os primeiros 100k clientes com esse playbook.
+
+**Trade-offs aceitos:**
+- Build upfront maior — wedge exige landing + automação de abertura/regularização + nurture funcionando antes de gerar lead útil. Não é canal "ligar pro contador amanhã".
+- Precedente é de uma empresa que queimou muito budget de paid pra provar. Custo de aquisição real ainda desconhecido.
+- Canal exige decisão de motor: paid ads (Google/Meta "abrir CNPJ") vs. SEO orgânico vs. founder content. Research não comprometeu — fica pendente.
+
+**Sub-decisão aberta dentro de B (não travando turn atual):** o wedge captura **"abrir CNPJ"** (pre-revenue, empreendedor ainda sem operação — ICP não-matching com "back-office recorrente") ou **"regularizar CNPJ"** (operador existente batendo teto MEI/ME — ICP matching com trigger (c) da persona)? As duas formas estão no nome do canal e têm ICPs materialmente diferentes. Resolver antes de Phase 2 lock.
+
+**Impacto em Decisão 2 (próxima):**
+- Persona reframe ("substituir" → "amplia capacidade sem contratar") NÃO é mais forçado pelo canal (era forçado em A por hostilidade contábil). Continua sendo smart move por razão independente — evidência BR de que 72% das empresas em adoção inicial de IA citam medo de substituição como barreira. Reframe ainda recomendado, mas agora é julgamento cultural e não obrigação estrutural.
+
+**Impacto em Decisão 3 (subtipo):**
+- Wedge CNPJ tende a filtrar solo founders + sócios pequenos (2-3) — quem abre/regulariza CNPJ é quase sempre o dono operacional. CEO-de-20+ não abre CNPJ pessoalmente, um sócio operacional ou contador faz. Subtype "CEO 20+" fica improvável como primário via canal B. Não decide a Decisão 3 sozinho, mas enviesa.
+
 ---
 
 ## Journey-So-Far (Phase 1, rebuilt each turn)
@@ -161,22 +191,23 @@ Eu tinha afirmado no turn 3 que "steps 3+ da jornada são majoritariamente canal
 
 > Empreendedor dono de PME (subtipo solo/sócios/CEO-20+ ainda não segmentado), baixa literacia em IA, sem tempo, que busca substituir ou evitar contratação de funcionário operacional — começando por atividades recorrentes de back-office financeiro (prestação de contas, conciliação).
 
-**Turn:** 5
-**Edits pedidos por Romeu nesta iteração:** agent retornou com 4 canais + anti-rec + 2 flags críticos. Aguardando Romeu escolher em qual canal locar step 2 (e se aceita B2B2C implícito no canal #1).
+**Turn:** 6 (primeiro da sessão local pós-handoff remoto)
+**Edits pedidos por Romeu nesta iteração:** Decisão 1 locada — Canal B (wedge CNPJ). Aguardando Decisão 2 (persona reframe).
 
 **Draft de jornada (Phase 1, ainda não locada):**
 
 | # | Passo | Estado |
 |---|-------|--------|
 | 1 | Empreendedor sofre um dos 4 gatilhos (a-d) | Locked — multi-trigger com comms diferenciadas |
-| 2 | Discovery — descobre que BaseIA existe | **Unknown ativo** — canal não definido, aguardando escolha A/B/C |
-| 3 | Primeiro contato | Bloqueado no step 2 |
+| 2 | Discovery via wedge "Abra/Regularize CNPJ grátis" | Locked (flavor abrir vs regularizar ainda a resolver antes de Phase 2) |
+| 3 | Primeiro contato | A levantar |
 | 4+ | — | A levantar |
 
 **Ambiguidades abertas:**
-- Canal de descoberta: A/B/C em aberto.
-- Subtipo de empreendedor (solo / 2-3 / CEO-20+) ainda não segmentado.
-- Framing "substituir funcionário" flagado como possivelmente divergente do que o cliente pensa.
+- Sub-flavor do wedge: abrir CNPJ (pre-revenue) vs regularizar CNPJ (operador existente). ICPs diferentes.
+- Motor do canal: paid vs SEO orgânico vs founder content. Não decidido.
+- Subtipo de empreendedor (solo / 2-3 / CEO-20+) — canal B enviesa pra solo + sócios pequenos, mas Decisão 3 ainda não tomada.
+- Persona reframe ("substituir" → "amplia capacidade") — Decisão 2 aberta.
 
 **Postura:** Não forçar decisão onde não há. Unknowns são discoveries legítimas e viram research items no AI execution map.
 
