@@ -60,9 +60,9 @@ Recommendation: B — parallelism preserves momentum; merge gate still respected
 | Two competing SDD sources of truth (ULTRAPLAN Phase 4 doc + skill body) | Skill body references ULTRAPLAN Phase 4 for lifecycle semantics; never restates. Follows `atomic-files.md` |
 | Critic rubber-stamping | Enforce "cite testable defect" gate; audit via AI_EXECUTION_MAP.md REJECT entries having defect[] populated |
 
-## Anomalies to investigate
+## Anomalies (investigated)
 
-- `hash_units/` directory missing despite commit `a1a3e5a` titled "phase2+4+5 scaffolding: SDD, AI_EXECUTION_MAP, DOC_RECONCILIATION, hash_units". Commit message likely referred to `_tools/hash_units.py` (script), not a dir. Verify with `git log --all -- _tools/hash_units.py` and `git log --all -- hash_units/`.
+- ~~`hash_units/` directory missing despite commit `a1a3e5a`~~ — RESOLVED 2026-04-24. `git log --all -- hash_units/` returns empty; dir never tracked. Commit message was imprecise — refers to the script `_tools/hash_units.py`, not a directory. No action needed. Commit messages going forward should distinguish script vs directory to avoid this ambiguity.
 
 ## Post-Explore revisions (2026-04-24, after reading SDD/AI_EXECUTION_MAP/ULTRAPLAN Phase 4-5)
 
@@ -90,11 +90,13 @@ Rationale: user prompt was written as executor; project reality is Phase 5 class
 
 ### Newly discovered pending items
 
-| # | Item |
-|---|------|
-| 9 | `_tools/hash_units.py` must expose `--verify <unit_hash>` CLI that the skill invokes. Verify script has this; if not, either extend script or skill parses SDD.md directly as fallback |
-| 10 | `model_pattern` column in AI_EXECUTION_MAP.md — vocabulary not in Explore output; need to enumerate before skill can fill this field on classify |
-| 11 | Decide: does classify skill INVENT classification or READ user's upstream decision? V1 assumption: Builder PROPOSES classification, Critic REVIEWS, Tester validates against validation_pattern presence + quality. User makes FINAL call via chat before append |
+| # | Item | Status |
+|---|------|--------|
+| 9 | `_tools/hash_units.py --verify` CLI | RESOLVED 2026-04-24 — script has NO `--verify`. Only default (global drift check) and `--self-test`. Skill v1 updated: runs global drift check, then parses SDD.md locally for unit-specific hash match. No script change needed |
+| 10 | `model_pattern` vocabulary | RESOLVED 2026-04-24 — is FREE-TEXT, not enum. Format: "model + tool use pattern" per ULTRAPLAN line 190. Example in existing phase-2 row: "Haiku 4.5 gera variants via tool use...". Skill v1 updated with Critic guidance to reject generic "AI does X" proposals |
+| 11 | Who decides classification — skill invents vs reads upstream? | OPEN — v1 assumption: Builder proposes, Critic reviews, user approves in chat before append. Needs first real run to confirm UX |
+| 12 | Idempotency — unit already in AI_EXECUTION_MAP | OPEN 2026-04-24 — skill v1 added to "Quando NÃO usar"; v2+ should add `--reclassify` flag for explicit override |
+| 13 | Principle derived but not in ULTRAPLAN: "classificação = capacidade de rodar em escala sem supervisão constante" — add explicit to Builder guidance | RESOLVED 2026-04-24 — added to SKILL.md classify vocabulary table |
 
 ### Meta-prompt v2 (user asked for improved prompt at end of original)
 

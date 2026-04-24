@@ -62,6 +62,7 @@ Executar uma unit individual do SDD.md durante Phase 5 (classify) ou Phase 6+ (i
 - Edição ou criação do SDD.md — isso é Phase 4
 - Batch de múltiplas units — use wrapper externo que chama este skill em loop
 - Unit já classificada como `blocked_by_missing_infra` — resolver infra primeiro
+- Unit já tem linha em `AI_EXECUTION_MAP.md` com `task_type=classify` executado — idempotente sob spec unchanged; re-rodar não produz valor novo. Forçar via flag externa `--reclassify` se necessário (v1: não suportado)
 - Mudança trivial que não justifica custo 15× do trio (research Anthropic 2025-06)
 - Invocação sem `unit_hash` e `task_type` — skill DEVE pedir args, nunca assumir
 
@@ -71,7 +72,9 @@ Executar uma unit individual do SDD.md durante Phase 5 (classify) ou Phase 6+ (i
 Ler `unit_hash` (obrigatório, >=8 chars) e `task_type` (obrigatório, `classify | implement`). Qualquer ausente → perguntar ao usuário no chat e PARAR.
 
 ### 2. Verify hash
-Invocar `python _tools/hash_units.py --verify <unit_hash>`. Se CLI não expor `--verify`: parsear SDD.md diretamente, recomputar sha256(phase_id|customer_action|io_signature|sorted(decision_buttons)), comparar com unit.unit_hash. Drift ou unit inexistente → ABORT, reportar.
+Invocar `python _tools/hash_units.py` (sem flags — roda drift check global `CUSTOMER_JOURNEY.md` → `SDD.md`). Exit 0 = OK; exit 1 = drift. Se drift: ABORT, reportar output do script. Script não tem `--verify <hash>`; não inventar flag.
+
+Em seguida, parsear `SDD.md` localmente pra localizar a unit pelo argumento `unit_hash`: match por prefix ≥ 8 chars contra `unit_hash:` de cada unit. Exatamente 1 match → prossegue. Zero ou múltiplos → ABORT.
 
 ### 3. Load unit
 Ler a unit inteira de SDD.md. Campos esperados (todos obrigatórios por contrato Phase 4): `phase_id`, `customer_action`, `io_signature`, `decision_buttons`, `unit_hash`, `responsibility`, `interface`, `ai_role`, `validation_pattern`, `escalation_rule`, `dependencies`. Campo ausente → ABORT.
@@ -155,7 +158,16 @@ Critic output schema:
 ```
 | <unit_hash> | <classification> | <model_pattern> | <human_decision> | <missing_infra> | <validation_pattern> |
 ```
-`classification` ∈ `ai_executable_at_scale | human_in_loop_required | blocked_by_missing_infra`.
+
+Vocabulário e contrato por coluna:
+
+| Coluna | Tipo | Guidance |
+|--------|------|----------|
+| `classification` | enum | `ai_executable_at_scale` \| `human_in_loop_required` \| `blocked_by_missing_infra`. Princípio decisor (derivado de AI_EXECUTION_MAP.md): "capacidade de rodar em escala SEM supervisão constante" — não é sobre quanta IA envolve, é sobre necessidade de intervenção humana por execução |
+| `model_pattern` | free-text | Modelo + tool use pattern. Ex: `"Haiku 4.5 gera variants via tool use; Sonnet 4.6 refina se conversion cai"`. Vazio (`—`) se `classification ≠ ai_executable_at_scale`. Critic DEVE rejeitar genérico tipo `"AI faz X"` — exigir nome do modelo + padrão de tool use |
+| `human_decision` | free-text | O que exatamente o humano decide (quando `human_in_loop_required`) |
+| `missing_infra` | free-text | O que precisa existir pra unblock (quando `blocked_by_missing_infra`). Vazio se outras classificações |
+| `validation_pattern` | copy from SDD | Re-surfacear literal o `validation_pattern` da unit. Se SDD não tem: classify NÃO pode ser `ai_executable_at_scale` (regra ULTRAPLAN) |
 
 **task_type=implement (v1 stub)** — NÃO aplicar diff. Builder.proposal fica no trace apenas. Reportar ao usuário que v1 não aplica; upgrade path para v2.
 
