@@ -171,7 +171,7 @@ Uma assumption feita durante scaffolding (tudo mais foi derivado de decisões tr
 5. Gerar Mermaid flowchart quando Phase 1 completa.
 6. Review + merge PR.
 
-**PR:** criado no turn A-9 após este commit. URL logada abaixo.
+**PR:** https://github.com/Romeu89/baseia/pull/1 — aberto, não merged.
 
 ## Post-autonomous verification checklist (for Romeu)
 
