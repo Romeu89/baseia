@@ -183,6 +183,46 @@ Eu tinha afirmado no turn 3 que "steps 3+ da jornada são majoritariamente canal
 **Impacto em Decisão 3 (subtipo):**
 - Wedge CNPJ tende a filtrar solo founders + sócios pequenos (2-3) — quem abre/regulariza CNPJ é quase sempre o dono operacional. CEO-de-20+ não abre CNPJ pessoalmente, um sócio operacional ou contador faz. Subtype "CEO 20+" fica improvável como primário via canal B. Não decide a Decisão 3 sozinho, mas enviesa.
 
+### 2026-04-24 — Decisão 2 LOCKED — Persona reframe aprovado
+
+**Decision:** Persona v0.1 reescrita: "empreendedor dono de PME que **amplia capacidade sem contratar próximo CLT**, começando por atividades recorrentes de back-office financeiro (prestação de contas, conciliação)."
+
+**Romeu's choice:** "Aceitar reframe" (opção recomendada pelo agente).
+
+**Why:**
+- Research BR citado: 72% das empresas em adoção inicial de IA citam medo de substituição como barreira ativa. Framing "substituir" é evidência-hostil mesmo em Canal B (direto ao dono).
+- Wedge "regularizar CNPJ" captura muito pre-hire (solo founders ou empresas que operam no limite de MEI/ME sem CLT formal). "Substituir funcionário" é literalmente incoerente — não tem funcionário a substituir.
+- "Amplia capacidade sem contratar próximo CLT" é true-subset culturalmente neutro: não perde audiência que também busca "evitar contratação", e ganha audiência que rejeitaria "substituir".
+
+**Trade-off aceito:** framing perde punch comercial direto ("não contrato mais ninguém" é mais concreto que "amplia capacidade"). Recuperado via comms: triggers a/c (operacional, teto) usam tom "escala sem CLT"; triggers b/d (controle, FOMO) usam tom "faz o back-office sozinho".
+
+### 2026-04-24 — Decisão 3 LOCKED — Subtipo primário = Solo founder
+
+**Decision:** Target primário é **solo founder** — decide e paga do bolso, 1-2 pessoas, ele é o operacional.
+
+**Romeu's choice:** "Solo founder".
+
+**Why:**
+- Fit duplo: Canal B (regularizar CNPJ) pega solo founders que bateram teto MEI/ME, e persona reframeada (amplia capacidade sem CLT) descreve exatamente o solo founder que não quer contratar primeiro funcionário.
+- Decisão implica: (a) autoridade de decisão = 1 pessoa (ele próprio), (b) setup = 1-2 pessoas (ele + contador ou esposa/parente), (c) preço-sensibilidade alta (paga do bolso), (d) capacidade técnica baixa pra operar ferramenta complexa.
+
+**Segmentos secundários deferidos (não descartados):** 2-3 sócios e CEO 20+ ficam fora da Phase 2 primária. Mapear depois quando segmento primário tiver product-market fit.
+
+**Implicação pro SDD (Phase 4):** units de first-touch e onboarding devem assumir "usuário final = decisor = pagador = operador". Sem persona-split no flowchart.
+
+### 2026-04-24 — Sub-flavor do wedge LOCKED — Regularizar CNPJ
+
+**Decision:** Wedge de Canal B é **"Regularizar CNPJ grátis"** — operador existente batendo teto MEI/ME, não "Abrir CNPJ" (pre-revenue).
+
+**Romeu's choice:** "Regularizar CNPJ (Recommended)".
+
+**Why:**
+- ICP matching com produto: BaseIA é back-office recorrente (financeiro, prestação de contas, conciliação). Pre-revenue (abrir CNPJ pela primeira vez) não tem back-office pra automatizar ainda — ICP não bate.
+- Alinhamento com triggers travados: "bateu teto de faturamento mas CLT impede contratar" (trigger c) é literalmente o mesmo arquétipo de "regularizar CNPJ" (MEI limite ~R$81k, ME ~R$360k — quem bate teto precisa migrar de regime).
+- Concentração de esforço: wedge único simplifica funnel (landing + automação de regularização + nurture). "Ambos" foi rejeitado — dobra complexidade antes de provar que 1 funciona.
+
+**Trade-off aceito:** perde volume de lead que "abrir CNPJ" geraria. Aceitável porque lead abrir-CNPJ tem ICP distinto (pre-revenue) e nurture seria longo (meses até ter back-office).
+
 ---
 
 ## Journey-So-Far (Phase 1, rebuilt each turn)
@@ -191,23 +231,24 @@ Eu tinha afirmado no turn 3 que "steps 3+ da jornada são majoritariamente canal
 
 > Empreendedor dono de PME (subtipo solo/sócios/CEO-20+ ainda não segmentado), baixa literacia em IA, sem tempo, que busca substituir ou evitar contratação de funcionário operacional — começando por atividades recorrentes de back-office financeiro (prestação de contas, conciliação).
 
-**Turn:** 6 (primeiro da sessão local pós-handoff remoto)
-**Edits pedidos por Romeu nesta iteração:** Decisão 1 locada — Canal B (wedge CNPJ). Aguardando Decisão 2 (persona reframe).
+**Turn:** 7 (pre-flight do autonomous run fechado — pronto pra autonomous deterministic work)
+**Edits pedidos por Romeu nesta iteração:** Decisões 2, 3, sub-wedge lockadas. Autonomous run autorizado com escopo determinístico.
 
-**Draft de jornada (Phase 1, ainda não locada):**
+**Persona v0.1 → v0.2 (LOCKED):**
+> Solo founder de PME, 1-2 pessoas, decide e paga do bolso, baixa literacia em IA, sem tempo, que **amplia capacidade sem contratar próximo CLT** — começando por atividades recorrentes de back-office financeiro (prestação de contas, conciliação). Típico: bateu teto MEI/ME e precisa regularizar CNPJ pra escalar.
+
+**Draft de jornada (Phase 1, steps 1-2 lockados, steps 3+ pendentes):**
 
 | # | Passo | Estado |
 |---|-------|--------|
-| 1 | Empreendedor sofre um dos 4 gatilhos (a-d) | Locked — multi-trigger com comms diferenciadas |
-| 2 | Discovery via wedge "Abra/Regularize CNPJ grátis" | Locked (flavor abrir vs regularizar ainda a resolver antes de Phase 2) |
-| 3 | Primeiro contato | A levantar |
-| 4+ | — | A levantar |
+| 1 | Solo founder sofre um dos 4 gatilhos (a-d) | **LOCKED** — multi-trigger com comms diferenciadas |
+| 2 | Discovery via wedge "Regularizar CNPJ grátis" | **LOCKED** — operador existente batendo teto MEI/ME |
+| 3 | Primeiro contato | **PARKED** — requer interview user-dependent |
+| 4+ | — | **PARKED** — requer interview user-dependent |
 
-**Ambiguidades abertas:**
-- Sub-flavor do wedge: abrir CNPJ (pre-revenue) vs regularizar CNPJ (operador existente). ICPs diferentes.
-- Motor do canal: paid vs SEO orgânico vs founder content. Não decidido.
-- Subtipo de empreendedor (solo / 2-3 / CEO-20+) — canal B enviesa pra solo + sócios pequenos, mas Decisão 3 ainda não tomada.
-- Persona reframe ("substituir" → "amplia capacidade") — Decisão 2 aberta.
+**Ambiguidades abertas (deferred, não bloqueiam autonomous):**
+- Motor do canal (paid vs SEO orgânico vs founder content): decisão de go-to-market, não de jornada. Fora do escopo Phase 1-5.
+- Segmentos secundários (2-3 sócios, CEO 20+): mapear depois de PMF do primário.
 
 **Postura:** Não forçar decisão onde não há. Unknowns são discoveries legítimas e viram research items no AI execution map.
 
