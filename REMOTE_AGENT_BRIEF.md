@@ -20,6 +20,75 @@ Three concrete outputs. Nothing else:
 
 ---
 
+## Sandbox preflight (mandatory, runs before Task A)
+
+Runs FIRST, before the Mandatory pre-flight section below. Purpose: make the sandbox commit-and-push capable in seconds so the time budget goes to deliverables, not environment discovery. Failures here are the #1 cause of past wasted runs.
+
+### 1. Run the bootstrap script
+
+```bash
+bash _tools/sandbox_bootstrap.sh
+```
+
+The script's final stdout line is the result.
+
+- `BOOTSTRAP OK push_mode=<mode> gh=<mode> user=<email>` → continue.
+- `BOOTSTRAP FAIL: <reason>` → HALT. Emit one line to the user: `Sandbox bootstrap failed: <reason>. Re-run the local sandbox-prep prompt before relaunching the remote agent.` Do NOT attempt the rest of the brief.
+
+### 2. Verify identity is scoped to Romeu
+
+The bootstrap script set repo-scoped `user.email` and `user.name`. Confirm:
+
+```bash
+git config user.email   # must print romeuhrechdan@gmail.com
+git config user.name    # must print Romeu Hungria Rechdan
+```
+
+If either is wrong, re-apply manually before any commit:
+
+```bash
+git config user.email romeuhrechdan@gmail.com
+git config user.name "Romeu Hungria Rechdan"
+```
+
+Sandbox snapshots discard `.git/config`, so this MUST be re-checked every run even when a prior run set it.
+
+### 3. Detect `gh` availability and pick the PR path
+
+Read the `gh=<mode>` field from the bootstrap script's `BOOTSTRAP OK` line.
+
+| Mode | Action |
+|------|--------|
+| `authenticated` | Use `gh pr create` at the end as the brief specifies. |
+| `installed-no-auth` | Skip `gh pr create`. Append a `## PR creation pending` section to REMOTE_REVIEW.md containing the literal command for the user to run locally: `gh pr create --base claude/phase1-interview --head claude/phase1-remote-review --title "Remote review + prep for Phase 1 interview (stacked PR)" --body-file _shape/REMOTE_PR_BODY.md`. Write `_shape/REMOTE_PR_BODY.md` with the body content from the Final PR message template. No halt. |
+| `absent` | Same fallback as `installed-no-auth`. No halt. |
+
+Missing `gh` is NEVER a halt condition.
+
+### 4. Push cadence (hard)
+
+Push after EVERY deliverable, not at the end of the run. This supersedes any commit-batching language elsewhere in this brief.
+
+| State | Verdict |
+|-------|---------|
+| 0 unpushed commits | Normal. |
+| 1 unpushed commit | Maximum tolerated state. |
+| 2 unpushed commits | Misbehavior. Push immediately, even mid-task, before any further edit. |
+
+A deliverable is any write to: REMOTE_REVIEW.md, the research file, PHASE1_INTERVIEW_SCRIPT.md, or `_shape/REMOTE_PR_BODY.md`. Each write → commit → push. If `push_mode=local-only`, commit anyway and continue — work survives on disk for manual recovery.
+
+### 5. Hard time cap
+
+| Wall-clock from bootstrap completion | Behavior |
+|---------------------------------------|----------|
+| 0–75 min | Normal work. |
+| T+75 min | STOP starting new tasks. Commit and push whatever is in flight. Append a `## Time-cap reached` section to REMOTE_REVIEW.md listing what is done vs. what is parked, per task (A / B / C). |
+| T+90 min | Hard stop. Final commit + push. Open the PR with whatever exists. Partial > nothing. |
+
+Track elapsed time from the moment the bootstrap script printed `BOOTSTRAP OK`, not from sandbox boot.
+
+---
+
 ## Mandatory pre-flight (before ANY other work)
 
 Execute in order. Halt on first failure with reason logged to REMOTE_REVIEW.md.
