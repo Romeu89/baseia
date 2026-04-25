@@ -1,6 +1,6 @@
 # System Design Document — BaseIA
 
-**Status:** Partial lock. Unit pro step 2 preenchido. Step 1 collapsed em finding #2 (validation circularity — trigger capture migra pra onboarding unit parked). Steps 3+ parked aguardando Phase 1 interview completion.
+**Status:** Phase 1 LOCKED. Units pros steps 2, 3, 4, 5, 6 preenchidos. Step 1 collapsed em finding #2 (validation circularity — trigger capture vive em discovery onboarding sub-flow da unit 2). Phase 1 termina em Step 6 per Q11 (proof-of-value paywall + retention loop). Steps 7+ deferred pra Phase 2 com PMF data.
 **Source (Phase 2 table):** [`CUSTOMER_JOURNEY.md`](CUSTOMER_JOURNEY.md)
 **Drift checker:** [`_tools/hash_units.py`](_tools/hash_units.py)
 **Hash formula (bumped 2026-04-25 finding #7):** `sha256(phase_id + "|" + customer_action + "|" + io_signature + "|" + "|".join(sorted(decision_buttons)) + "|" + validation_signature)` where `validation_signature` is the canonical structured form from journey table col 9 (semicolon-joined `pattern_type:args` segments, sorted alphabetically).
@@ -84,20 +84,24 @@ Cada unit tem todos os campos abaixo. `validation_pattern` é MANDATORY (nunca b
   escalation_rule: "(1) AI confidence <95% → fallback clean_report (sem error claim). (2) Golden-output mismatch entre AI e rule-based → human review queue (não display direto). (3) Primeiros 3 wins por client → Romeu/contador review obrigatório (D0 trust). (4) Error dismiss rate >20% sustentado num client → marca cliente como false-positive-prone, raise confidence threshold pra ele (pessoal); cross-client trend >20% → revisar AI error-detection model. (5) Win-event-rate <70% em 500 opt-ins → revisar copy + AI sensitivity de error detection (talvez bar muito alto)."
   dependencies: ["4"]
 
+- phase_id: "6"
+  customer_action: "User entra retention/recurring loop. Paywall ativo após N=3 (preliminary) conciliações successful. Re-engagement entre month-end closes via push notification em unusual transactions detectadas."
+  io_signature: "IN: Unit 5 first WIN consumed + recurring conciliação cycle ativo (monthly cadence) | OUT: User convertido em paying (post-paywall accept) OR churn (decline); + retention engagement events captured (push opens, paywall events, monthly active state)"
+  decision_buttons: ["accept_paywall", "decline_paywall", "dismiss_notification", "tap_unusual_notification"]
+  validation_signature: "behavioral_self_report:churn_reason_post_paywall;metric_threshold:paywall_conversion_rate>=0.15@500eligible;metric_threshold:push_notif_tap_rate>=0.15@500pushes;webhook_callback:notification_dismissed_event;webhook_callback:paywall_event;webhook_callback:unusual_txn_push_event"
+  unit_hash: "153839bc3ea93997e07175c8db3596bb9052098d1bed613a0cea8d4645967105"
+  responsibility: "Converter post-win user em paying customer via proof-of-value paywall (após N=3 conciliações successful) + sustentar engagement entre fechos mensais via push notifications AI-flagged em unusual transactions; capturar churn signal pra retraining."
+  interface: "Input = unit 5 win event capture + recurring conciliação cycle (cron mensal n8n + AI conciliador da unit 4 reusado). Output = subscription state (active/churned) + push events stream + paywall conversion outcomes. Sub-flows: (a) paywall display após Nth successful conciliação por user; (b) push dispatch quando AI flagga unusual transaction (reuse Step 5 error-detection model com sensitivity threshold diferente — push é mais permissive que win-screen)."
+  ai_role: "execute"
+  validation_pattern: "(1) Metric threshold: paywall conversion rate ≥15% em janela de 500 eligible users (eligible = user que atingiu N=3 successful conciliações). Anchor: B2B SaaS proof-of-value paywall benchmark 15-25%; conservador escolhido. (2) Metric threshold: push notification tap rate ≥15% em janela de 500 pushes (signal-to-noise OK; abaixo disso vira spam fatigue). (3) Webhook callbacks: paywall_event (display, accept, decline), unusual_txn_push_event (dispatch + tap state), notification_dismissed_event (negative feedback loop). (4) Behavioral self-report: post-paywall churn survey ('porque cancelou?') opcional pra users que decline_paywall — feedback pra retraining + product fix."
+  escalation_rule: "(1) Paywall conversion <15% em 500 eligible → revisar pricing + copy do paywall + N threshold (talvez 3 conciliações é cedo, esperar 5). (2) Push tap rate <15% em 500 pushes → AI sensitivity de unusual está alta demais OR copy do push está fraca; halt pushes + Romeu revisa. (3) Notification dismiss rate >40% sustentado por user → push fatigue individual; reduce frequency pra esse user automaticamente. (4) Sustained churn reason cluster (post-paywall survey) → priorizar product fix em next sprint. (5) Recurring conciliação cycle falha (golden-output diff baixa) → halt billing pro user + manual review (não cobrar por output ruim)."
+  dependencies: ["4", "5"]
+
 ---
 
-## TBD units (parked)
+## TBD units (parked) — Phase 2 scope
 
-Steps 3+ do Phase 2 table estão marcados TBD aguardando Phase 1 interview interativo. Quando interview completar:
-
-1. Adicionar rows correspondentes no Phase 2 table de CUSTOMER_JOURNEY.md.
-2. Rodar `python _tools/hash_units.py` — deve listar units faltantes no SDD.
-3. Adicionar blocks YAML aqui, um por step, seguindo o schema.
-4. Rodar drift check de novo — deve exit 0.
-
-**Unidades pendentes (placeholders):**
-
-*(Steps 5+ a levantar no interview.)*
+Phase 1 fechada. Units 2-6 lockadas. Steps 7+ (referral, expansion, multi-entity, churn handling) ficam pra Phase 2 quando PMF data disponível. Trigger pra unlock Phase 2: ≥N paying clients sustentados por ≥M meses (definir em Phase 2 entry).
 
 ---
 

@@ -585,3 +585,51 @@ Tudo isso vira validation_signature do future onboarding unit, não do step 2.
 **Locked units count: 3 → 4** (phases 2, 3, 4, 5). Drift 0, exit 0.
 
 **Próximo: Step 6** — Q9 (paywall event) + Q10 (engagement entre month-end cycles).
+
+### 2026-04-25 — Phase 1 interview Q9 + Q10 + Q11 + Step 6 LOCKED — Phase 1 COMPLETE
+
+**Q9 = A:** Paywall após N=3 (preliminary) successful conciliações. Proof-of-value gate substitui timer arbitrário. Threshold N e price point a calibrar pós-launch.
+
+**Q10 = A:** Re-engagement entre month-end closes via push notification em unusual transactions (AI-flagged). Reusa pattern do Step 5 win com sensitivity diferente. Signal-to-noise alto.
+
+**Q11 = A:** Phase 1 PARA em Step 6. Steps 7+ (referral, expansion, multi-entity, churn handling) deferred pra Phase 2 quando ≥N paying clients sustentados por ≥M meses. Scope discipline.
+
+**Unit 6 lockado:** ai_role=`execute`, classification=`blocked_by_missing_infra`. Hash: `153839bc...4645967105`.
+
+Missing infra cumulativa Phase 1 (units 2 + 3 + 4 + 5 + 6) = ~15 itens:
+- Unit 2: feature-flag/A-B infra, analytics webhook, landing CMS dinâmico, opt-in waitlist DB, back_office_optin capture+routing
+- Unit 3: n8n bot infra com confidence/scope check, inbox unificada, FAQ KB editável, reply webhook
+- Unit 4: rule-based conciliação engine, Receita seed pipeline, training corpus, app back-office UI, approval state DB
+- Unit 5: error-detection corpus, win-screen UI, per-client confidence storage, review queue UX, trigger-tone copy templates
+- Unit 6: payment gateway, subscription DB, push notification infra, unusual-txn detection (reuse), paywall state tracker, churn survey UX
+
+**Resumo Phase 1 LOCKED:**
+
+| Unit | Phase | Step | ai_role | Classification | Hash | validation_signature segments |
+|---|---|---|---|---|---|---|
+| 2 | wedge landing | 2 | assist | ai_executable_at_scale | 7fd213d8 | 6 segments |
+| 3 | first contact | 3 | assist | ai_executable_at_scale | c5e3a6b4 | 4 segments |
+| 4 | onboarding | 4 | execute | blocked_by_missing_infra | e27d0a7d | 5 segments |
+| 5 | first WIN | 5 | execute | blocked_by_missing_infra | 52068a9d | 7 segments |
+| 6 | retention/paywall | 6 | execute | blocked_by_missing_infra | 153839bc | 6 segments |
+
+**Drift check final:** 5 units, 0 drift, exit 0.
+
+### 2026-04-25 — Part C COMPLETE — Phase 1 interview locked through Step 6
+
+| Q | Decision | Step locked | Commit |
+|---|---|---|---|
+| Q1+Q2+Q3 | A + C + B (auto-responder + tiered + reply rate ≥10%) | Step 3 | 6eab5d5 |
+| Q4+Q5+Q6 | D + B + C (back_office_optin + Receita Federal pre-pop + execute 1ª run) | Step 4 + unit 2 update | 64bb518 |
+| Q7+Q8 | B+A hybrid + D mixed (error/clean win + layered validation) | Step 5 | a02b1e4 |
+| Q9+Q10+Q11 | A + A + A (proof-of-value paywall + push em unusual + para em Step 6) | Step 6 + Phase 1 close | (this commit) |
+
+**Estado final pós-Part C:**
+- Locked units: 5 (phases 2, 3, 4, 5, 6)
+- Step 1 collapsed (validation circularity)
+- Steps 7+ deferred pra Phase 2 com PMF data
+- Total commits Part C: 4
+- Hash drift: 0
+- Self-test: 30/30 PASS
+
+**Pronto pra Part D — Mermaid flowchart Phase 2.**
