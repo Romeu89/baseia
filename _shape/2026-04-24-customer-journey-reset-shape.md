@@ -266,3 +266,19 @@ Eu tinha afirmado no turn 3 que "steps 3+ da jornada são majoritariamente canal
 | 4 — SDD com hashing + validation_pattern por unit | **Movido pra Cursor Claude via prompt de "ultraplan"** |
 | 5 — AI execution map | **Movido pra Cursor Claude via prompt de "ultraplan"** |
 | 6 — Entrega: prompt pro ultraplan + handoff limpo | Novo — target final desta sessão |
+
+---
+
+### 2026-04-25 — Readiness validation snapshot
+
+**Decision:** Antes de retomar Phase 1 steps 3+ ou autorizar qualquer mudança em SDD/AI_EXECUTION_MAP, ler [`2026-04-25-readiness-validation.md`](2026-04-25-readiness-validation.md) (relatório completo).
+
+**Why:** Resume Contract de 2026-04-24 (`AUTONOMOUS_RUN_REPORT.md`) está estagnado:
+- Branch real (`claude/phase1-remote-review` @ `0816cac`) ≠ branch declarada (`claude/phase1-interview` @ `a1a3e5a`).
+- `git remote -v` vazio neste sandbox; PR #1 não verificável daqui.
+- 7 commits pós-`a1a3e5a` (REMOTE_REVIEW, research, skill SDD framework, PHASE1_INTERVIEW_SCRIPT, sandbox preflight) sem entry no autonomous run log.
+- REMOTE_REVIEW Finding 1 (X threshold) bloqueia legitimidade Phase 4/5.
+
+**Verdict consolidado:** Tooling GREEN (22/22 self-test, 0 drift). Phase 1 interview GO com Romeu (script de 15 Qs pronto). Phases 2-5 NO-GO até reconciliação git + 5 decisões pendentes do Romeu.
+
+**Append-only respeitado:** sem rewrite das entries anteriores; Phase Status table (linhas 257-268) fica com snapshot 2026-04-24 — relatório novo é a fonte de verdade atual.
