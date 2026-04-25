@@ -509,3 +509,59 @@ Tudo isso vira validation_signature do future onboarding unit, não do step 2.
 **Locked units count: 1 → 2** (phase_id 2 + 3). Drift 0, exit 0.
 
 **Próximo: Step 4** — Q4 (wedge-to-product transition) + Q5 (first-login state) + Q6 (auto vs approval).
+
+### 2026-04-25 — Phase 1 interview Q4 — Step 4 handoff = checkbox `back_office_optin` no wedge form
+
+**Decision:** Q4 option D — opt-in checkbox no wedge form ("Quero ajuda contínua com back-office"). User auto-qualifica ICP. Coerente com pattern waitlist do finding #10 + lock anterior do wedge "regularizar grátis".
+
+**Why D (não A/B/E):**
+- A (auto-enroll trial): max conversão mas trust-hit em low-literacy.
+- B (D30 email separating): user esfriou; Contabilizei-style wedge requer warm handoff.
+- E (manual Romeu): founder-cap.
+- C descartado (single paid product day 1 conflita com "Regularizar CNPJ grátis" lockado).
+
+**Implicação na unit 2:** form ganha 1 checkbox. `back_office_optin` vira decision_button (sorted entry primeiro alfabeticamente). Webhook capture novo (`back_office_optin_capture`).
+
+### 2026-04-25 — Phase 1 interview Q5 — Step 4 first-login state = pre-populated Receita Federal data
+
+**Decision:** Q5 option B — pre-populated com Receita Federal data já coletada na regularização (razão social, CNAE, endereço). MVP-coerente, sem infra nova além do que regularization já implica.
+
+**Why B (não A/C/D):**
+- A (empty canvas): abandonment risk em low-literacy.
+- C (Pluggy/Belvo bank statement): build cost real (open-banking integration); fica como v2 path.
+- D (mock-demo mode): dual-mode UI complexity sem clear ROI early-stage.
+
+**Trade-off aceito:** sem bank statement = primeiro wow é só "look, your data is already here", não "we conciliated your transactions". Dependerá de Q6 pra wow-factor real.
+
+### 2026-04-25 — Phase 1 interview Q6 — Step 4 ai_role = `execute` na 1ª conciliação (mixed-mode)
+
+**Decision:** Q6 option C — AI auto-roda 1ª conciliação como demo de valor, depois pede approval pra default future runs. ai_role unit 4 = `execute` (1ª run AI executa); future runs herdam choice (auto OR manual).
+
+**Why C (não A/B/D):**
+- A (auto-run + review): bold mas trust-hit potencial.
+- B (wait for click): persona não entende o que clicar.
+- D (fully autonomous): high-risk pra new users sem trust history.
+- C combina wow + control. Stripe/Notion onboarding pattern.
+
+**Critical golden-output mandate:** 1ª conciliação AI output DEVE ser comparada contra rule-based deterministic conciliador antes de display ao user. Accuracy ≥95% senão NÃO mostra (route pra Romeu/contador review). D0 trust-protection — falsa primeira conciliação destrói relação com low-literacy persona.
+
+**Validation pattern unit 4:** golden-output (≥95%) + metric_threshold (first-login completion ≥70% @ 500 opt-ins, preliminary) + 2× webhook (first_login + first_run_completed) + human_checkpoint (dispute_first_run review).
+
+### 2026-04-25 — Step 4 LOCKED — onboarding com auto-conciliação validated
+
+**Unit 4 lockado.** Critical: `blocked_by_missing_infra` — AI execution viable mas falta:
+1. Rule-based conciliação engine (baseline pra golden-output diff)
+2. Receita Federal seed pipeline (regularization → CNPJ data fetch)
+3. Conciliação training corpus pro AI model
+4. App back-office BaseIA (web/mobile UI com login + dispute flow)
+5. Approval state DB (default_auto_runs flag por user)
+
+**Hoje BaseIA é só FastAPI prod sem app cliente.** Phase 5 desbloqueio = build esses 5 itens. Princípio: `missing_infra > validation_pattern` na hierarquia de classification — mesmo com validation_pattern legítimo, sem infra não dá pra subir pra `ai_executable_at_scale`.
+
+**Hash impact:**
+- Unit 2 hash bumped 3ª vez: `05a2ae6e...` → `7fd213d8...` (decision_buttons grew 5→6, signature +1 segment)
+- Unit 4 new: `e27d0a7d...3bfa347290`
+
+**Locked units count: 2 → 3** (phases 2, 3, 4). Drift 0, exit 0.
+
+**Próximo: Step 5** — Q7 (qual é o first win?) + Q8 (validation do first win).

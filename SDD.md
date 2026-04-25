@@ -35,9 +35,9 @@ Cada unit tem todos os campos abaixo. `validation_pattern` é MANDATORY (nunca b
 - phase_id: "2"
   customer_action: "Solo founder encontra wedge \"Regularizar CNPJ grátis\" e clica pro landing"
   io_signature: "IN: Search intent OR referral link OR anúncio paid OR founder content | OUT: User na wedge landing page com intent explícita de regularizar CNPJ"
-  decision_buttons: ["is_existing_cnpj", "learn_more", "start_regularization", "talk_to_human", "waitlist_optin"]
-  validation_signature: "behavioral_self_report:cnpj_state_gate;golden_output:headline_ab_retention_d7;metric_threshold:landing_to_submit_conversion>=0.08@500sess;webhook_callback:submit_event_capture;webhook_callback:waitlist_optin_event"
-  unit_hash: "05a2ae6e84eba81c3dff8109aa3fbf88349b07f6cb6dfc2a821f356730819745"
+  decision_buttons: ["back_office_optin", "is_existing_cnpj", "learn_more", "start_regularization", "talk_to_human", "waitlist_optin"]
+  validation_signature: "behavioral_self_report:cnpj_state_gate;golden_output:headline_ab_retention_d7;metric_threshold:landing_to_submit_conversion>=0.08@500sess;webhook_callback:back_office_optin_capture;webhook_callback:submit_event_capture;webhook_callback:waitlist_optin_event"
+  unit_hash: "7fd213d80d2f777ced1fd41a71b8c0bfaef773fa2b4a042d014d126f74fbcbde"
   responsibility: "Capturar intenção explícita de regularizar CNPJ via landing page do wedge, com gate de ICP (CNPJ existente sim/não), self-report do trigger e variant da headline."
   interface: "Input = sessão de user com intent discovery-stage. Output (path-yes) = record no DB com {email, CNPJ, trigger_self_report, headline_variant, timestamp}, evento webhook downstream. Output (path-no) = educational page + opt-in opcional → record {email, intent='open_cnpj', cohort='waitlist'} pra nurture longo."
   ai_role: "assist"
@@ -58,6 +58,19 @@ Cada unit tem todos os campos abaixo. `validation_pattern` é MANDATORY (nunca b
   escalation_rule: "(1) Reply rate <10% em 500 submits → halt envio + revisar copy do auto-responder; Romeu aprova nova variant. (2) Bot escalation rate >50% sustentado → FAQ coverage gap; Romeu/contador expandem scripts do bot. (3) Confidence baixo no bot triagem → escalation imediata (single user)."
   dependencies: ["2"]
 
+- phase_id: "4"
+  customer_action: "Solo founder (back_office_optin=true) loga 1ª vez no BaseIA back-office: vê Receita Federal data pre-populada, sistema auto-roda 1ª conciliação como demo de valor, pede approval pra default future auto-runs"
+  io_signature: "IN: User com back_office_optin=true da unit 2 + regularização completed evento (Receita Federal data disponível) | OUT: Onboarded user com 1ª conciliação AI auto-rodada exibida + approval status pra future runs (default_auto_runs: yes/no)"
+  decision_buttons: ["approve_auto_runs", "dispute_first_run", "keep_manual_runs"]
+  validation_signature: "golden_output:first_conciliacao_ai_vs_rulebased_accuracy>=0.95;human_checkpoint:dispute_first_run_review;metric_threshold:first_login_completion_rate>=0.70@500optins;webhook_callback:first_login_event;webhook_callback:first_run_completed_event"
+  unit_hash: "e27d0a7da94bee131bf74d6a82c5419c46162b508d2c3db318e1443bfa347290"
+  responsibility: "Onboardar user opt-in via wedge cross-sell em BaseIA back-office: provisioning automático com Receita Federal seed, AI executa 1ª conciliação como demo de valor (com golden-output validation pre-display), captura preferência de approval pra future runs."
+  interface: "Input = user record com back_office_optin=true + regularization_completed event payload (CNPJ, razão social, CNAE, endereço da Receita Federal). Output = app account ativo + 1ª conciliação AI output (validated vs rule-based) exibida + user choice persistida em DB (approve_auto_runs | keep_manual_runs | dispute_first_run)."
+  ai_role: "execute"
+  validation_pattern: "(1) Golden-output: 1ª conciliação AI output comparada a baseline rule-based deterministic; accuracy ≥95% antes de display ao user (D0 trust-protection — falsa primeira conciliação mata a relação). (2) Metric threshold: first-login completion rate ≥70% medido em 500 opt-ins (preliminary, calibrar pós-launch — sem benchmark BR specific). (3) Webhook callback: first_login_event captura entrada; first_run_completed_event captura output + user choice. (4) Human checkpoint: dispute_first_run flow envia AI output pra Romeu/contador review queue (humano resolve disputa)."
+  escalation_rule: "(1) Golden-output accuracy <95% no batch → halt auto-run pra futuros opt-ins; route todos pra Romeu/contador manual ate fix; rebuild AI conciliador com mais training data. (2) First-login completion rate <70% em 500 opt-ins → revisar onboarding UX + email subject line de provisioning. (3) Dispute rate >10% por user (lifetime) → user → review queue + 1:1 contact (likely persona mismatch). (4) Sustained dispute trend cross-users → halt execute, downgrade ai_role pra assist (require user click pra rodar)."
+  dependencies: ["2", "3"]
+
 ---
 
 ## TBD units (parked)
@@ -70,11 +83,6 @@ Steps 3+ do Phase 2 table estão marcados TBD aguardando Phase 1 interview inter
 4. Rodar drift check de novo — deve exit 0.
 
 **Unidades pendentes (placeholders):**
-
-- phase_id: "4"
-  customer_action: TBD
-  unit_hash: TBD
-  validation_pattern: TBD
 
 *(Steps 5+ a levantar no interview.)*
 
