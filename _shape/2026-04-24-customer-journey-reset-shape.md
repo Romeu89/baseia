@@ -266,3 +266,489 @@ Eu tinha afirmado no turn 3 que "steps 3+ da jornada são majoritariamente canal
 | 4 — SDD com hashing + validation_pattern por unit | **Movido pra Cursor Claude via prompt de "ultraplan"** |
 | 5 — AI execution map | **Movido pra Cursor Claude via prompt de "ultraplan"** |
 | 6 — Entrega: prompt pro ultraplan + handoff limpo | Novo — target final desta sessão |
+
+---
+
+### 2026-04-25 — Readiness validation snapshot
+
+**Decision:** Antes de retomar Phase 1 steps 3+ ou autorizar qualquer mudança em SDD/AI_EXECUTION_MAP, ler [`2026-04-25-readiness-validation.md`](2026-04-25-readiness-validation.md) (relatório completo).
+
+**Why:** Resume Contract de 2026-04-24 (`AUTONOMOUS_RUN_REPORT.md`) está estagnado:
+- Branch real (`claude/phase1-remote-review` @ `0816cac`) ≠ branch declarada (`claude/phase1-interview` @ `a1a3e5a`).
+- `git remote -v` vazio neste sandbox; PR #1 não verificável daqui.
+- 7 commits pós-`a1a3e5a` (REMOTE_REVIEW, research, skill SDD framework, PHASE1_INTERVIEW_SCRIPT, sandbox preflight) sem entry no autonomous run log.
+- REMOTE_REVIEW Finding 1 (X threshold) bloqueia legitimidade Phase 4/5.
+
+**Verdict consolidado:** Tooling GREEN (22/22 self-test, 0 drift). Phase 1 interview GO com Romeu (script de 15 Qs pronto). Phases 2-5 NO-GO até reconciliação git + 5 decisões pendentes do Romeu.
+
+**Append-only respeitado:** sem rewrite das entries anteriores; Phase Status table (linhas 257-268) fica com snapshot 2026-04-24 — relatório novo é a fonte de verdade atual.
+
+### 2026-04-25 — Part A complete — git reconciled vs merged PR #1
+
+**Decision:** Pulou re-signing (manter `N`); rebased `claude/phase1-remote-review` onto `origin/main` + force-with-lease push; PR #2 retargeted base de `claude/phase1-interview` (deletado/merged) pra `main`.
+
+**State pós-Part A:**
+- HEAD = `d15c1f4` (era `6c50082`); 6 commits replayed clean sem conflito
+- `git config user.email` = `romeuhrechdan@gmail.com` (já estava — reauthor desnecessário)
+- PR #2 OPEN, base=main, head=claude/phase1-remote-review
+- `python3 _tools/hash_units.py --self-test`: 22 PASS, exit 0
+- `python3 _tools/hash_units.py`: 2 units, 0 drift, exit 0
+
+**Why skip signing:** Romeu autorizou (3 perguntas via AskUserQuestion). Trade-off aceito: commits ficam unsigned no GitHub (badge ausente) em troca de zero rebase destrutivo extra.
+
+### 2026-04-25 — Finding #1 LOCKED — X threshold = 8% / window = 500 sessões
+
+**Decision:** Unit 2 conversion threshold = **≥8%** medido em janela de **500 sessões** (volume-anchored, não time-anchored). Revisit triggers: **>15%** (X set too low — raise) ou **<4%** (below floor — kill creative/wedge).
+
+**Why:**
+- Anchor: B2B SaaS self-serve high-intent benchmark band 4-10% (Unbounce + daydream 2025). 8% = mid-band conservador.
+- Volume-anchor (500 sessões) substitui "2 semanas" original do SDD.md:53 — robusto a low-traffic; pareado com 8% = ~40 conversions mínimas pra significância.
+- Researcher confidence medium — sem BR-fintech-wedge benchmark; todos candidatos são US/global B2B SaaS proxies.
+- Form-length tailwind: BaseIA wedge tem 2-3 fields vs 6+ "lift de 120%" (Unbounce) — favorável.
+
+**Trade-offs aceitos:**
+- Threshold US-anchored sem BR-specific data — risco de calibration off na realidade pt-BR (mitigado por revisit triggers).
+- Time-based escalation antigo (2 semanas) substituído por volume — mais robusto mas deixa cenários de tráfego muito baixo sem deadline temporal explícito.
+
+**Edits aplicados (same-turn):**
+- `SDD.md` unit 2 — `validation_pattern` + `escalation_rule` reescritos com 8% / 500 sessões / revisit triggers + source citation.
+- `CUSTOMER_JOURNEY.md` Phase 2 row 2 — coluna validation pattern atualizada com mesmos números + anchors.
+
+**Discovery não-obvia (alimenta finding #7):** unit 2 hash NÃO mudou pós-edit. `_tools/hash_units.py:67` formula é `sha256(phase_id + customer_action + io_signature + sorted(decision_buttons))` — `validation_pattern` e `escalation_rule` ficam fora. Ou seja, mudei a regra de validação core do step e o drift checker não nota. **Isso é exatamente o gap que finding #7 chama** ("hash inclui `validation_pattern`?") — vai ser próxima decisão na queue.
+
+**Split unit 2 em (a) capture + (b) first-payment (research finding #4):** adiado pra finding #2 da queue (unit 1/2 split discussion). Não resolvido aqui.
+
+### 2026-04-25 — Finding #7 LOCKED — schema bump: hash inclui validation_signature
+
+**Decision:** Hash formula extended to include canonical structured `validation_signature` (option C — canonical structure, escolhido por Romeu via AskUserQuestion).
+
+**Schema change:**
+- Phase 2 table grows from 8 → 9 colunas — coluna 9 "Validation signature".
+- SDD unit schema ganha campo `validation_signature` (mandatory, paralelo ao `validation_pattern` prosa).
+- Hash formula: `sha256(phase_id + "|" + customer_action + "|" + io_signature + "|" + sorted_buttons_joined + "|" + validation_signature)`.
+- Delimiter dentro de `validation_signature` é `;` (não `|` — pipes quebram parser de tabela markdown).
+
+**Canonical signature format:**
+- Pipe-segments substituídos por semicolon-segments: `pattern_type:args[;pattern_type:args...]`
+- Sorted alphabetically pra estabilidade.
+- Pattern types do vocab CUSTOMER_JOURNEY.md (6): `schema_assertion`, `golden_output`, `human_checkpoint`, `webhook_callback`, `metric_threshold`, `behavioral_self_report`.
+- Args convention: `metric_threshold:<metric_id><op><value>@<window>` (op ∈ `>=,<=,>,<,==`); outros pattern types levam single args ID.
+
+**Why C (não A nem B):**
+- (A) skip aceita drift checker meio cego — viola rigor de Phase 4.
+- (B) hash full prose: rephrases viram drift fake → agente vai evitar editar prosa → doc rot.
+- (C) hash structured: rephrases livres, mudança de tipo/número trava hash. Verdadeiro testing-as-planning lock.
+
+**Implementação (same-turn):**
+- `_tools/hash_units.py`: nova fn `canonical_validation_signature()` (split em `;`, strip backticks, sort, join). `compute_hash` ganha 5º arg. `parse_journey_table` aceita 9 cols. Self-test fixtures atualizados (30 PASS, era 22).
+- `CUSTOMER_JOURNEY.md`: header tabela 9 cols, units 1+2 com signatures, units 3+ com `TBD`. Texto "8 colunas" virou "9 colunas".
+- `SDD.md`: hash formula doc atualizada, schema example com `validation_signature`, units 1+2 com novo campo + novo `unit_hash`.
+- Hashes recomputadas: unit 1 `d6c59fb5...` → `004ec912...`; unit 2 `af58f450...` → `4f382dbc...`.
+
+**Trade-offs aceitos:**
+- ULTRAPLAN constraint "8 colunas mandatory" agora "9 colunas" — bump deliberado, documentado.
+- Human escreve signature canonical à mão. Risco de inconsistência entre signature e prose `validation_pattern`. Mitigação futura: lint que parser prose pra validar consistência (parked, não bloqueia).
+- Backtick wrap nas signatures cells é cosmético (markdown display) — parser strip-a.
+
+**Drift check pós-implementação:** 2 units, 0 drift, exit 0. Self-test 30/30 PASS.
+
+### 2026-04-25 — Finding #3 LOCKED — comm tone pra trigger='other' = Discovery prompt
+
+**Decision:** 5ª comm tone do `which_trigger` = **Discovery prompt** (option C, escolhido por Romeu). Follow-up open-text "o que te trouxe aqui?" → keyword match em a/b/c/d ou review queue.
+
+**Why C (não A nem B):**
+- A (generic nurture): perde signal — não learn nada com 'other'.
+- B (manual review queue): honest mas vira gargalo humano em escala.
+- C (discovery prompt): converte 'other' em learning loop. Captura trigger novo OU reclassifica retroativamente. Custa UI extra e introduz friction de 1 step.
+
+**Edits aplicados:**
+- `CUSTOMER_JOURNEY.md` Step 1 trigger matrix — adiciona 5ª linha `other` com discovery loop spec; nota explicativa "discovery loop, não comm tactic estável".
+- `CUSTOMER_JOURNEY.md` Phase 2 row 1 — validation pattern prosa expandida com branch 'other'; validation signature ganha `behavioral_self_report:discovery_other_freetext`.
+- `SDD.md` unit 1 — `validation_pattern` (prose), `validation_signature`, `responsibility`, `interface`, `ai_role`, `escalation_rule` atualizados.
+- `unit_hash` recomputado: `004ec912...` → `50f7c32f...` (signature mudou).
+
+**Discovery flagged: ai_role unit 1 mudou de `none` → `assist`.** Keyword reclassifier do discovery loop é componente AI (regex/embedding match). Por definição do vocab, `assist` = "AI auxilia humano (copilot-style, rascunhos, sugestões). Humano decide." Reclassifier propõe trigger; sem match → human revisa via review queue. Bate com `assist`.
+
+**Trade-offs aceitos:**
+- Friction extra no funnel pra cohort 'other' — aceitável porque cohort 'other' já é signal de problema, não de revenue path.
+- Keyword reclassifier requer setup (lista de keywords por trigger). Build cost real pra Phase 5 — vai virar item no AI execution map.
+- Comm 'other' fica congelada até reclassificação. Se reclassificador é lento, user fica em limbo. Mitigação: escalation timeout (e.g., 48h) → manual review automático. **Parked como sub-item — não bloqueia finding #3 lock.**
+
+**Drift check:** 2 units, 0 drift, exit 0.
+
+### 2026-04-25 — Finding #10 LOCKED — gate `is_existing_cnpj` + waitlist opt-in pra path "abrir CNPJ"
+
+**Decision:** Visitor com intent "abrir CNPJ" no wedge → option C (hybrid educational + opt-in waitlist). Visitor primeiro responde gate `is_existing_cnpj` (yes/no). Path-yes proceeds wedge regularizar; path-no vai pra educational page com (1) link externo Sebrae/parceiro contábil pra abrir agora, (2) opt-in waitlist OPCIONAL (não default).
+
+**Why C:**
+- A (redirect off-funnel) honest mas perde lead pra sempre.
+- B (waitlist default) economia ruim: pre-revenue founders pivotam/fecham em ~50% dos casos no nurture window de 6-18m.
+- C força auto-qualificação via opt-in — só quem realmente planeja regularizar futuramente faz opt-in.
+
+**Edits aplicados:**
+- `CUSTOMER_JOURNEY.md` Phase 2 row 2 — system touchpoint expandido (gate + branches), comm trigger expandido (gate question), decision_buttons crescido de 3 → 5 (`is_existing_cnpj`, `learn_more`, `start_regularization`, `talk_to_human`, `waitlist_optin`), validation pattern prosa expandida com 5 sub-itens, validation signature expandida com 2 segmentos novos (`behavioral_self_report:cnpj_state_gate`, `webhook_callback:waitlist_optin_event`).
+- `SDD.md` unit 2 — `decision_buttons`, `validation_signature`, `responsibility`, `interface`, `validation_pattern`, `escalation_rule` atualizados.
+- `unit_hash` recomputado: `4f382dbc...` → `05a2ae6e...` (signature + buttons mudaram).
+
+**Trade-offs aceitos:**
+- Wedge agora tem step extra (gate antes de CTA) — adiciona friction. Mitigação: pergunta única binária, 2 segundos pro user.
+- Educational page + waitlist UI = build cost real. Vai virar item Phase 5 AI execution map (provavelmente low-AI: page é static + form opt-in).
+- Threshold "30% off-ICP rate sinaliza canal misalign" é unanchored (judgment call). Pode precisar revisita após 500 sessões reais.
+
+**Discovery (não-obvia):** unit 2 agora tem 2 outputs distintos por path (yes/no). Tecnicamente isso é split de unit em sub-units, mas mantemos como unit única com `interface` documentando ambos paths. Se complexidade crescer, finding #2 (próximo na queue, unit 1/2 split) pode acabar splitando unit 2 também — flagged.
+
+**Drift check:** 2 units, 0 drift, exit 0.
+
+### 2026-04-25 — Finding #2 LOCKED — collapse unit 1 (validation circularity rejected)
+
+**Decision:** Drop unit 1 do SDD lockset (option A). Trigger event não é touchpoint observável — é mental state pre-discovery. Validation pattern original ("behavioral self-report em onboarding") era circular: unit 1 valida-se via dados gerados em unit downstream que ainda nem existe.
+
+**Why A (não C nem B):**
+- C (keep + relabel): cosmético — renomeia o problema sem resolver. Mantém zumbi unit no SDD.
+- B (split com pre-landing measurement): over-engineering. Requer ad-targeting + search analytics infra antes do user se identificar. Custo alto, ROI baixo early-stage.
+- A (collapse): honra o princípio "unit sem validation_pattern legítimo não deve existir no lockset".
+
+**Edits aplicados:**
+- `SDD.md` Status: "Units 1 e 2" → "Unit 2 (step 1 collapsed)".
+- `SDD.md` Units (locked): bloco YAML do phase_id="1" deletado; substituído por nota explicativa do collapse.
+- `SDD.md` unit 2 dependencies: `["1"]` → `[]`.
+- `CUSTOMER_JOURNEY.md` "Step 1 — Triggers (LOCKED)" → "Trigger context (hypothesis, NOT a journey unit)" — comm matrix preservada como contexto pra headlines.
+- `CUSTOMER_JOURNEY.md` Phase 2 table: row 1 deletada; nota explicativa acima da tabela documenta o collapse e o que migra pra onboarding.
+
+**Onde mora o trigger capture agora:**
+- `which_trigger` MCQ (a/b/c/d/other) → onboarding unit (parked, Phase 1 interview vai locar)
+- Discovery prompt for `other` (finding #3) → mesmo onboarding unit (parked)
+- Persona review trigger (`other` ≥40%) → escalation rule do mesmo onboarding unit
+
+Tudo isso vira validation_signature do future onboarding unit, não do step 2.
+
+**Trade-offs aceitos:**
+- Locked units cai de 2 → 1 temporariamente. Fica assim até Phase 1 interview locar onboarding unit. Não é regressão — é honestidade sobre o que de fato foi medido.
+- `ai_role: assist` que tinha bumpado em finding #3 (keyword reclassifier do discovery prompt) também migra pra onboarding unit junto.
+- Numeração de phase_id mantida (skip phase 1, primeiro lockado é phase_id=2). Evita renumeração que quebraria refs em REMOTE_REVIEW.md, research files, etc.
+
+**Drift check:** 1 unit hashed, 0 drift, exit 0.
+
+### 2026-04-25 — Part B COMPLETE — 5 findings locked
+
+| # | Finding | Decision | Hash impact |
+|---|---|---|---|
+| 1 | X threshold em unit 2 | 8% / 500 sessões / revisit triggers | unit 2 prose only (não hashed inicialmente) |
+| 7 | hash inclui validation_signature? | C — canonical structure (semicolon delim) | schema bumped; recompute units 1 e 2 |
+| 3 | comm tone pra trigger='other' | C — discovery prompt + keyword reclassifier | unit 1 hash bumped (depois collapsed) |
+| 10 | visitor 'abrir CNPJ' wedge | C — gate `is_existing_cnpj` + opt-in waitlist | unit 2 hash bumped + buttons grew 3→5 |
+| 2 | unit 1 validation circularity | A — collapse, migra capture pra onboarding parked | unit 1 removido do SDD |
+
+**Estado final pós-Part B:**
+- Locked units: 1 (phase_id=2)
+- Parked units: phase_id=3, 4, 5+ (Phase 1 interview vai locar onboarding e demais)
+- Schema: 9 cols mandatory, validation_signature canonical hashable
+- All 5 findings de blocking/important resolvidos. Findings minor (#4, #5, #6, #8, #9) ficam em PR separado depois.
+
+**Pronto pra Part C** — Phase 1 interview steps 3+ TDD-style com onboarding unit como primeira meta (capture pendente do collapse).
+
+### 2026-04-25 — Phase 1 interview Q1 — Step 3 first-contact = auto-responder email (zero human touch)
+
+**Decision:** Step 3 customer experience nos primeiros 5min pós-submit = **email auto-responder com next steps da regularização, zero human touch** (script PHASE1_INTERVIEW_SCRIPT.md Q1 option A).
+
+**Why (Romeu's choice + agent rationale):**
+- Cheap, scales. Não trava em Romeu's calendar (option B founder-led não escala >20 clientes).
+- Não assume back-office product já built (option D requer sandbox real).
+- Não distrai do wedge purpose (option C tour misto wedge+product).
+
+**Trade-off aceito:** zero human signal no D0 → engagement risk. Mitigação: D7 retention metric da unit 2 vai sinalizar se cohort tá engajada ou não. Se D7 < threshold, revisitar option B/C.
+
+**Implicações pra journey row 3 (parciais — locking depende de Q2/Q3):**
+- Customer action: "Solo founder recebe email auto-responder com próximos passos da regularização (D0)"
+- Input: tudo de unit 2 output (submission record)
+- Output: User aware da timeline de regularização + link pra status page + ciência de próximas ações (TBD detail)
+- System touchpoint: Email transactional service (SES / Resend / outro)
+- Comm trigger: webhook on unit 2 submit → template selecionado por `trigger_self_report` (a/c → operacional, b → controle, d → educativa, other → discovery)
+
+**Locked depois de Q2 (ai_role + escalation) + Q3 (validation pattern).**
+
+### 2026-04-25 — Phase 1 interview Q2 — Step 3 reply ownership = Tiered (bot triagem + Romeu/contador escalation)
+
+**Decision:** Q2 option C — AI bot triagem em primeira linha (FAQs, status, prazos, docs) com escalation pra Romeu/contador em out-of-scope/low-confidence. Stack: n8n + Anthropic Haiku 4.5 (low-latency).
+
+**Why C:**
+- A (Romeu pessoalmente) trava founder; cap ~20 clientes.
+- B (bot solo) alto risco de fail em CNPJ edge cases (burocracia BR é unique-case heavy).
+- D (pure self-serve) coerente com Q1=A levado ao limite mas sem human channel mata persona low-literacy.
+- C balanceia: bot escala FAQs comuns; human pega substância.
+
+**ai_role unit 3 = `assist`** — AI auxilia (triagem) mas humano decide substância em escalation.
+
+**Trade-off aceito:** bot infra build cost (n8n workflow + Anthropic + FAQ KB editável + inbox unificada). Vai virar item Phase 5 missing_infra. Mitigação: stack já familiar (n8n/Anthropic em uso na BaseIA).
+
+### 2026-04-25 — Phase 1 interview Q3 — Step 3 validation primary = reply rate ≥10% @ 500 submits
+
+**Decision:** Validation pattern primary = **auto-responder reply rate ≥10% medido sobre janela de 500 submits**. Window-aligned com unit 2 (volume-anchored).
+
+**Why B:**
+- E (D7 retention) já é métrica unit 2 — diluição de signal.
+- D (regularization completion) atravessa Steps 3-5; não isolado a Step 3.
+- C/A requerem infra extra (doc upload / cal link) fora de scope Step 3 imediato.
+- B é métrica natural pra auto-responder; reply é signal de engagement (mesmo com ambiguidade signal-to-noise).
+
+**Threshold preliminary:** 10% (mid-band B2B SaaS auto-responder reply rate ~5-15% wild). Sem benchmark BR específico — revisita após 1ª medição real.
+
+**Não adicionado: bot deflection rate como secondary** (option B+secondary). Romeu picked plain B. Deflection vai pra escalation_rule como sub-monitor (>50% sustentado → FAQ gap).
+
+### 2026-04-25 — Step 3 LOCKED — auto-responder + tiered handler
+
+**Unit 3 lockado** com schema completo:
+- phase_id: "3"
+- decision_buttons: `click_status_link`, `reply_email`
+- validation_signature: `human_checkpoint:bot_escalation_to_romeu;metric_threshold:auto_responder_reply_rate>=0.10@500submits;webhook_callback:email_send_event;webhook_callback:reply_received_event`
+- unit_hash: `c5e3a6b48d96132dad01dc966a76bbf277828dc5212f4c7d85fc34e2fa8723cc`
+- ai_role: `assist`
+- dependencies: ["2"]
+- AI_EXECUTION_MAP classification: `ai_executable_at_scale` (model_pattern Haiku 4.5 bot triagem + Resend send)
+
+**Locked units count: 1 → 2** (phase_id 2 + 3). Drift 0, exit 0.
+
+**Próximo: Step 4** — Q4 (wedge-to-product transition) + Q5 (first-login state) + Q6 (auto vs approval).
+
+### 2026-04-25 — Phase 1 interview Q4 — Step 4 handoff = checkbox `back_office_optin` no wedge form
+
+**Decision:** Q4 option D — opt-in checkbox no wedge form ("Quero ajuda contínua com back-office"). User auto-qualifica ICP. Coerente com pattern waitlist do finding #10 + lock anterior do wedge "regularizar grátis".
+
+**Why D (não A/B/E):**
+- A (auto-enroll trial): max conversão mas trust-hit em low-literacy.
+- B (D30 email separating): user esfriou; Contabilizei-style wedge requer warm handoff.
+- E (manual Romeu): founder-cap.
+- C descartado (single paid product day 1 conflita com "Regularizar CNPJ grátis" lockado).
+
+**Implicação na unit 2:** form ganha 1 checkbox. `back_office_optin` vira decision_button (sorted entry primeiro alfabeticamente). Webhook capture novo (`back_office_optin_capture`).
+
+### 2026-04-25 — Phase 1 interview Q5 — Step 4 first-login state = pre-populated Receita Federal data
+
+**Decision:** Q5 option B — pre-populated com Receita Federal data já coletada na regularização (razão social, CNAE, endereço). MVP-coerente, sem infra nova além do que regularization já implica.
+
+**Why B (não A/C/D):**
+- A (empty canvas): abandonment risk em low-literacy.
+- C (Pluggy/Belvo bank statement): build cost real (open-banking integration); fica como v2 path.
+- D (mock-demo mode): dual-mode UI complexity sem clear ROI early-stage.
+
+**Trade-off aceito:** sem bank statement = primeiro wow é só "look, your data is already here", não "we conciliated your transactions". Dependerá de Q6 pra wow-factor real.
+
+### 2026-04-25 — Phase 1 interview Q6 — Step 4 ai_role = `execute` na 1ª conciliação (mixed-mode)
+
+**Decision:** Q6 option C — AI auto-roda 1ª conciliação como demo de valor, depois pede approval pra default future runs. ai_role unit 4 = `execute` (1ª run AI executa); future runs herdam choice (auto OR manual).
+
+**Why C (não A/B/D):**
+- A (auto-run + review): bold mas trust-hit potencial.
+- B (wait for click): persona não entende o que clicar.
+- D (fully autonomous): high-risk pra new users sem trust history.
+- C combina wow + control. Stripe/Notion onboarding pattern.
+
+**Critical golden-output mandate:** 1ª conciliação AI output DEVE ser comparada contra rule-based deterministic conciliador antes de display ao user. Accuracy ≥95% senão NÃO mostra (route pra Romeu/contador review). D0 trust-protection — falsa primeira conciliação destrói relação com low-literacy persona.
+
+**Validation pattern unit 4:** golden-output (≥95%) + metric_threshold (first-login completion ≥70% @ 500 opt-ins, preliminary) + 2× webhook (first_login + first_run_completed) + human_checkpoint (dispute_first_run review).
+
+### 2026-04-25 — Step 4 LOCKED — onboarding com auto-conciliação validated
+
+**Unit 4 lockado.** Critical: `blocked_by_missing_infra` — AI execution viable mas falta:
+1. Rule-based conciliação engine (baseline pra golden-output diff)
+2. Receita Federal seed pipeline (regularization → CNPJ data fetch)
+3. Conciliação training corpus pro AI model
+4. App back-office BaseIA (web/mobile UI com login + dispute flow)
+5. Approval state DB (default_auto_runs flag por user)
+
+**Hoje BaseIA é só FastAPI prod sem app cliente.** Phase 5 desbloqueio = build esses 5 itens. Princípio: `missing_infra > validation_pattern` na hierarquia de classification — mesmo com validation_pattern legítimo, sem infra não dá pra subir pra `ai_executable_at_scale`.
+
+**Hash impact:**
+- Unit 2 hash bumped 3ª vez: `05a2ae6e...` → `7fd213d8...` (decision_buttons grew 5→6, signature +1 segment)
+- Unit 4 new: `e27d0a7d...3bfa347290`
+
+**Locked units count: 2 → 3** (phases 2, 3, 4). Drift 0, exit 0.
+
+**Próximo: Step 5** — Q7 (qual é o first win?) + Q8 (validation do first win).
+
+### 2026-04-25 — Phase 1 interview Q7 + Q8 + Step 5 LOCKED — first WIN = error/clean hybrid + layered validation
+
+**Q7 = B+A hybrid:** First WIN = AI surface error/discrepancy if found (confidence ≥95%), fallback clean conciliação report. Trigger-tone copy reforça win por persona (a/c="não tive trabalho", b="achou erro que perdi", d="IA realmente funciona").
+
+**Q8 = D mixed validation:** Layered defesa contra false positives:
+1. AI confidence gate ≥95% pra error claim
+2. Golden-output diff vs rule-based engine (ambos têm que flagar)
+3. Human review primeiros 3 wins por client (D0 trust insurance)
+4. Behavioral self-report (user confirm/dismiss)
+5. Metric threshold win-event-rate ≥70% @ 500 opt-ins
+6. Webhooks win_event + error_dismissed
+
+**Critical insight:** false positive em error-surface ("BaseIA achou erro que não existe") destrói trust irreversivelmente em low-literacy persona. Justifica complexidade de validation. Single-layer defesa (só confidence gate OU só golden-output) não é suficiente — confidence é self-reported pelo model, golden-output rule-based pode ter prior diferente do AI.
+
+**Unit 5 lockado:** ai_role=`execute`, classification=`blocked_by_missing_infra` (5 itens unit 4 + 5 extras específicos: error-detection corpus, win-screen UI, per-client confidence threshold storage, review queue UX, trigger-tone copy templates pre-approved). Hash: `52068a9d...213d69f313`.
+
+**Locked units count: 3 → 4** (phases 2, 3, 4, 5). Drift 0, exit 0.
+
+**Próximo: Step 6** — Q9 (paywall event) + Q10 (engagement entre month-end cycles).
+
+### 2026-04-25 — Phase 1 interview Q9 + Q10 + Q11 + Step 6 LOCKED — Phase 1 COMPLETE
+
+**Q9 = A:** Paywall após N=3 (preliminary) successful conciliações. Proof-of-value gate substitui timer arbitrário. Threshold N e price point a calibrar pós-launch.
+
+**Q10 = A:** Re-engagement entre month-end closes via push notification em unusual transactions (AI-flagged). Reusa pattern do Step 5 win com sensitivity diferente. Signal-to-noise alto.
+
+**Q11 = A:** Phase 1 PARA em Step 6. Steps 7+ (referral, expansion, multi-entity, churn handling) deferred pra Phase 2 quando ≥N paying clients sustentados por ≥M meses. Scope discipline.
+
+**Unit 6 lockado:** ai_role=`execute`, classification=`blocked_by_missing_infra`. Hash: `153839bc...4645967105`.
+
+Missing infra cumulativa Phase 1 (units 2 + 3 + 4 + 5 + 6) = ~15 itens:
+- Unit 2: feature-flag/A-B infra, analytics webhook, landing CMS dinâmico, opt-in waitlist DB, back_office_optin capture+routing
+- Unit 3: n8n bot infra com confidence/scope check, inbox unificada, FAQ KB editável, reply webhook
+- Unit 4: rule-based conciliação engine, Receita seed pipeline, training corpus, app back-office UI, approval state DB
+- Unit 5: error-detection corpus, win-screen UI, per-client confidence storage, review queue UX, trigger-tone copy templates
+- Unit 6: payment gateway, subscription DB, push notification infra, unusual-txn detection (reuse), paywall state tracker, churn survey UX
+
+**Resumo Phase 1 LOCKED:**
+
+| Unit | Phase | Step | ai_role | Classification | Hash | validation_signature segments |
+|---|---|---|---|---|---|---|
+| 2 | wedge landing | 2 | assist | ai_executable_at_scale | 7fd213d8 | 6 segments |
+| 3 | first contact | 3 | assist | ai_executable_at_scale | c5e3a6b4 | 4 segments |
+| 4 | onboarding | 4 | execute | blocked_by_missing_infra | e27d0a7d | 5 segments |
+| 5 | first WIN | 5 | execute | blocked_by_missing_infra | 52068a9d | 7 segments |
+| 6 | retention/paywall | 6 | execute | blocked_by_missing_infra | 153839bc | 6 segments |
+
+**Drift check final:** 5 units, 0 drift, exit 0.
+
+### 2026-04-25 — Part C COMPLETE — Phase 1 interview locked through Step 6
+
+| Q | Decision | Step locked | Commit |
+|---|---|---|---|
+| Q1+Q2+Q3 | A + C + B (auto-responder + tiered + reply rate ≥10%) | Step 3 | 6eab5d5 |
+| Q4+Q5+Q6 | D + B + C (back_office_optin + Receita Federal pre-pop + execute 1ª run) | Step 4 + unit 2 update | 64bb518 |
+| Q7+Q8 | B+A hybrid + D mixed (error/clean win + layered validation) | Step 5 | a02b1e4 |
+| Q9+Q10+Q11 | A + A + A (proof-of-value paywall + push em unusual + para em Step 6) | Step 6 + Phase 1 close | (this commit) |
+
+**Estado final pós-Part C:**
+- Locked units: 5 (phases 2, 3, 4, 5, 6)
+- Step 1 collapsed (validation circularity)
+- Steps 7+ deferred pra Phase 2 com PMF data
+- Total commits Part C: 4
+- Hash drift: 0
+- Self-test: 30/30 PASS
+
+**Pronto pra Part D — Mermaid flowchart Phase 2.**
+
+### 2026-04-25 — Part D LOCKED — Mermaid flowchart Phase 2 rendered
+
+**Decision:** Mermaid flowchart de Phase 1 inteira (steps 2-6 + branches) substitui seção `## Mermaid flowchart` do CUSTOMER_JOURNEY.md (era PARKED).
+
+**Validação:** Mermaid Chart MCP retornou `valid: true`, diagramType=`flowchart`, SVG ~400kb (rendered). Sintaxe limpa.
+
+**Branches encoded:**
+- `is_existing_cnpj` gate (finding #10): yes → wedge proceed; no → educational + waitlist_optin → off-funnel OR cohort DB.
+- `back_office_optin` checkbox (Q4): false → wedge-only customer (end of journey); true → onboarding (Step 4).
+- Golden-output validation (Step 4 + Step 5): fail → review queue (mesmo loop pra ambos).
+- Trust-protection: first 3 wins per client → forced human review antes de display.
+- Recurring loop (Step 6): n8n cron mensal → conciliação → paywall gate quando N=3 successful → push notif quando unusual txn detectada (cycle).
+- Phase 1 terminal nodes: off-funnel, wedge-only customer, paying active, referral (Phase 2 trigger), full PhaseEnd.
+
+**Trade-offs aceitos:**
+- Trigger context (collapsed unit 1) representado em laranja tracejado pra deixar claro que NÃO é um step real — visual signal de hypothesis.
+- Algumas branches simplificadas (e.g., Step 3 bot triage não mostra all FAQ vs out-of-scope sub-paths) pra preservar leitura.
+- 3 cores: azul=units lockados, laranja=context-only, verde=terminal states.
+
+**Não rendered (deferred Phase 2):**
+- Steps 7+ representados como single endpoint "Steps 7+ = Phase 2".
+- Detalhes internos das branches (e.g., what makes "out of scope" no Step 3) ficam no SDD escalation_rule.
+
+### 2026-04-25 — Part E COMPLETE — Phase 3 doc reconciliation executed (Strategy B)
+
+**Decision:** Strategy B (full process) chosen via AskUserQuestion. + Bulk-deprecate `Captura_Processos_AI/` (85 files = produto v1 vídeo) confirmed.
+
+**Process executed:**
+1. Cloned `https://github.com/romeuhr/baseia-planning.git` → `/tmp/baseia-planning-legacy` (depth=1)
+2. Context-distill subagent #1: classification table (40 material files identified out of 207)
+3. Diff check: shape e research files já no new repo (skip move) — apenas Cashflow_Conciliador 4 mds movidos pra `legacy-imports/cashflow-conciliador/`
+4. Context-distill subagent #2: extracted insights de 9 source files into single curated doc `_shape/2026-04-25-legacy-insights-extracted.md`
+5. DOC_RECONCILIATION.md updated com Execution Record (tabela completa de moved/merged/kept/deprecated)
+6. Cleanup: legacy clone removido pós-execution
+
+**Counters:**
+- Moved: 4 files (Cashflow Conciliador docs)
+- Merged: 9 source files → 1 curated insights doc (~89 lines)
+- Kept (read-only ref, NÃO migrated): ~10 files documentados em DOC_RECONCILIATION.md
+- Deprecated bulk: ~150 files (Captura_Processos_AI/ ~85, v1+v2 produto/* ~20, prompts/sprints+fases+blueprint ~20, _memoria session ledgers ~12, tech audits ~10, self-hosted migration plan ~15)
+
+**Critical insight não-óbvio:** Legacy repo tem ZERO content sobre persona MEI/ME teto, wedge "regularizar CNPJ", triggers a/b/c/d, paywall N=3, push em unusual txn, validation pattern vocab. Tudo veio do reset 24-25 abr. Justifica bulk-deprecate de 150 files — não é reciclável, é sunk-cost.
+
+**Insights preservados (legacy-insights-extracted.md):**
+- Retention/referral patterns (health check trimestral + WhatsApp referral) → Phase 2+
+- "Cada tela justifica existência" → design principle pra futuro UX
+- Goldilocks framing → informa paywall design Step 6
+- F1 (feasibility test) + F2 (timeline guard-rails) → meta-rules pra Phase 1 entry
+- "Construir é barato — founder time é o custo real" → Lean validation premise
+- Managed Agents hypothesis → Phase 5 delivery runtime decision
+- Voice & Tone guardrails → brand voice enforcement
+- A1/B2 hypotheses → Phase 4 SDD open questions
+- "PMEs querem menos risco, não IA" → brand tese central
+
+**Trade-offs aceitos:**
+- 9 source files merged into 1 curated doc → perda granular de attribution per insight, ganho em legibilidade.
+- Bulk-deprecate por pattern não enumera todos files individualmente — auditabilidade reduzida em troca de velocidade.
+- Cashflow_Conciliador SQL/docker/scripts NÃO migrated — Phase 5 vai re-build infra com decisões novas, não importar legacy plumbing.
+
+**Pronto pra Part F — Phase 4+5 final lock + re-validation.**
+
+### 2026-04-25 — Part F COMPLETE — Phase 4+5 final lock + Finding 4 correction
+
+**Critical correction caught:** Units 2 e 3 estavam classificadas `ai_executable_at_scale` MAS `missing_infra` non-empty (feature-flag/A-B infra, opt-in DBs, n8n bot infra com confidence/scope, FAQ KB editável, etc). Isso violava Finding 4 do REMOTE_REVIEW (`ai_executable_at_scale` só com missing_infra vazio). Corrigido: TODOS os 5 units agora `blocked_by_missing_infra`.
+
+**Princípio derivado #2 documentado em AI_EXECUTION_MAP.md:** hierarquia missing_infra > validation_pattern > AI capability. SDD lockset reflete o que **roda hoje**, não o que **rodaria se tivéssemos build**. Aspiration vai pra `model_pattern`, gate vai pra `classification`.
+
+**Final validation suite (todos passaram):**
+- `python3 _tools/hash_units.py --self-test`: 30/30 PASS, exit 0
+- `python3 _tools/hash_units.py`: 5 units hashed, 0 drift, exit 0
+- SDD.md `validation_pattern` count: 6 (1 schema ref + 5 unit blocks); 0 blanks ✓
+- AI_EXECUTION_MAP classification breakdown: 5× `blocked_by_missing_infra`, 0× outros ✓
+- Finding 4 invariant: 5/5 rows com missing_infra non-empty E classification=blocked_by_missing_infra. NÃO há row violando o invariante ✓
+
+### 2026-04-25 — ULTRAPLAN ciclo 1 COMPLETO
+
+**Estado final do design (pointer):**
+
+| Artifact | Status | Pointer |
+|---|---|---|
+| Persona v0.2 | LOCKED | `CUSTOMER_JOURNEY.md` Persona section + this shape |
+| Canal de discovery | LOCKED | Step 2 wedge "regularizar CNPJ grátis" — `CUSTOMER_JOURNEY.md` row 2 |
+| Phase 2 flowchart table (9 cols) | LOCKED | `CUSTOMER_JOURNEY.md` Phase 2 — 5 rows lockadas (units 2-6) |
+| Mermaid flowchart visual | LOCKED | `CUSTOMER_JOURNEY.md` Mermaid section — validated via MCP |
+| SDD units (with hash + validation_signature) | LOCKED | `SDD.md` — 5 units lockadas (phases 2-6) |
+| AI Execution Map | LOCKED | `AI_EXECUTION_MAP.md` — 5 rows, todas blocked_by_missing_infra (Phase 5 unblock = ~15 infra items) |
+| Hash drift checker | LOCKED | `_tools/hash_units.py` — schema bumped via finding #7 (col 9 `validation_signature` semicolon-separated, sorted alpha) |
+| Legacy reconciliation | DONE | `DOC_RECONCILIATION.md` Execution Record + `_shape/2026-04-25-legacy-insights-extracted.md` |
+| Shape (decision log) | LIVE | This file (`_shape/2026-04-24-customer-journey-reset-shape.md`) |
+
+**Findings resolution status:**
+- #1 (X threshold) — ✓ LOCKED (8% / 500 sessões / revisit triggers)
+- #2 (unit 1 circularity) — ✓ LOCKED (collapsed)
+- #3 (other comm tone) — ✓ LOCKED (discovery prompt + reclassifier)
+- #4 (ai_executable when missing_infra empty) — ✓ LOCKED (corrected in Part F: all 5 units now blocked_by_missing_infra)
+- #7 (hash inclui validation_signature) — ✓ LOCKED (option C canonical structure)
+- #10 (open CNPJ visitor) — ✓ LOCKED (gate `is_existing_cnpj` + waitlist opt-in)
+- #5, #6, #8, #9 (minor) — DEFERRED (Romeu autoriza batch fix em PR separado depois)
+
+**Phases status:**
+- Phase 1 (customer journey interview) — ✓ COMPLETE (Q1-Q11 todos resolvidos; Step 1 collapsed; Steps 2-6 lockados; Steps 7+ deferred Phase 2)
+- Phase 2 (flowchart lock + Mermaid) — ✓ COMPLETE
+- Phase 3 (doc reconciliation) — ✓ COMPLETE (Strategy B)
+- Phase 4 (SDD com hash + validation_pattern) — ✓ COMPLETE (5 units lockadas)
+- Phase 5 (AI execution map) — ✓ COMPLETE (todas 5 rows com classification + model_pattern + missing_infra documented)
+
+**Próximos passos pós-handoff:**
+- PR #2 (`claude/phase1-remote-review` → main) merge quando Romeu autorizar
+- Phase 5 implementation: build os ~15 missing_infra items pra unblock units 2-6 → ai_executable_at_scale real
+- Phase 2 design (steps 7+ referral/expansion) quando ≥N paying clients sustentados ≥M meses (definir M/N)
+- Minor findings batch fix (#5, #6, #8, #9) em PR separado
+
+**Total work this session (`claude/phase1-remote-review` branch):**
+- Commits: 11 (a4cdfa8 → 1c7d569 + Part F final)
+- Files modified: SDD.md, CUSTOMER_JOURNEY.md, AI_EXECUTION_MAP.md, _tools/hash_units.py, DOC_RECONCILIATION.md, _shape/* (multiple), legacy-imports/cashflow-conciliador/* (created)
+- Schema changes: Phase 2 table 8→9 cols (validation_signature mandatory)
+- Hash recomputes: 6 (units 1-2 from finding #7 → unit 1 deleted → unit 2 from #10 → unit 2 from Q4 + units 4-5-6 added)
+- Self-test: 22 → 30 PASS
