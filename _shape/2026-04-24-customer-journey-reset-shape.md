@@ -656,3 +656,41 @@ Missing infra cumulativa Phase 1 (units 2 + 3 + 4 + 5 + 6) = ~15 itens:
 **Não rendered (deferred Phase 2):**
 - Steps 7+ representados como single endpoint "Steps 7+ = Phase 2".
 - Detalhes internos das branches (e.g., what makes "out of scope" no Step 3) ficam no SDD escalation_rule.
+
+### 2026-04-25 — Part E COMPLETE — Phase 3 doc reconciliation executed (Strategy B)
+
+**Decision:** Strategy B (full process) chosen via AskUserQuestion. + Bulk-deprecate `Captura_Processos_AI/` (85 files = produto v1 vídeo) confirmed.
+
+**Process executed:**
+1. Cloned `https://github.com/romeuhr/baseia-planning.git` → `/tmp/baseia-planning-legacy` (depth=1)
+2. Context-distill subagent #1: classification table (40 material files identified out of 207)
+3. Diff check: shape e research files já no new repo (skip move) — apenas Cashflow_Conciliador 4 mds movidos pra `legacy-imports/cashflow-conciliador/`
+4. Context-distill subagent #2: extracted insights de 9 source files into single curated doc `_shape/2026-04-25-legacy-insights-extracted.md`
+5. DOC_RECONCILIATION.md updated com Execution Record (tabela completa de moved/merged/kept/deprecated)
+6. Cleanup: legacy clone removido pós-execution
+
+**Counters:**
+- Moved: 4 files (Cashflow Conciliador docs)
+- Merged: 9 source files → 1 curated insights doc (~89 lines)
+- Kept (read-only ref, NÃO migrated): ~10 files documentados em DOC_RECONCILIATION.md
+- Deprecated bulk: ~150 files (Captura_Processos_AI/ ~85, v1+v2 produto/* ~20, prompts/sprints+fases+blueprint ~20, _memoria session ledgers ~12, tech audits ~10, self-hosted migration plan ~15)
+
+**Critical insight não-óbvio:** Legacy repo tem ZERO content sobre persona MEI/ME teto, wedge "regularizar CNPJ", triggers a/b/c/d, paywall N=3, push em unusual txn, validation pattern vocab. Tudo veio do reset 24-25 abr. Justifica bulk-deprecate de 150 files — não é reciclável, é sunk-cost.
+
+**Insights preservados (legacy-insights-extracted.md):**
+- Retention/referral patterns (health check trimestral + WhatsApp referral) → Phase 2+
+- "Cada tela justifica existência" → design principle pra futuro UX
+- Goldilocks framing → informa paywall design Step 6
+- F1 (feasibility test) + F2 (timeline guard-rails) → meta-rules pra Phase 1 entry
+- "Construir é barato — founder time é o custo real" → Lean validation premise
+- Managed Agents hypothesis → Phase 5 delivery runtime decision
+- Voice & Tone guardrails → brand voice enforcement
+- A1/B2 hypotheses → Phase 4 SDD open questions
+- "PMEs querem menos risco, não IA" → brand tese central
+
+**Trade-offs aceitos:**
+- 9 source files merged into 1 curated doc → perda granular de attribution per insight, ganho em legibilidade.
+- Bulk-deprecate por pattern não enumera todos files individualmente — auditabilidade reduzida em troca de velocidade.
+- Cashflow_Conciliador SQL/docker/scripts NÃO migrated — Phase 5 vai re-build infra com decisões novas, não importar legacy plumbing.
+
+**Pronto pra Part F — Phase 4+5 final lock + re-validation.**
