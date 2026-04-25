@@ -565,3 +565,23 @@ Tudo isso vira validation_signature do future onboarding unit, não do step 2.
 **Locked units count: 2 → 3** (phases 2, 3, 4). Drift 0, exit 0.
 
 **Próximo: Step 5** — Q7 (qual é o first win?) + Q8 (validation do first win).
+
+### 2026-04-25 — Phase 1 interview Q7 + Q8 + Step 5 LOCKED — first WIN = error/clean hybrid + layered validation
+
+**Q7 = B+A hybrid:** First WIN = AI surface error/discrepancy if found (confidence ≥95%), fallback clean conciliação report. Trigger-tone copy reforça win por persona (a/c="não tive trabalho", b="achou erro que perdi", d="IA realmente funciona").
+
+**Q8 = D mixed validation:** Layered defesa contra false positives:
+1. AI confidence gate ≥95% pra error claim
+2. Golden-output diff vs rule-based engine (ambos têm que flagar)
+3. Human review primeiros 3 wins por client (D0 trust insurance)
+4. Behavioral self-report (user confirm/dismiss)
+5. Metric threshold win-event-rate ≥70% @ 500 opt-ins
+6. Webhooks win_event + error_dismissed
+
+**Critical insight:** false positive em error-surface ("BaseIA achou erro que não existe") destrói trust irreversivelmente em low-literacy persona. Justifica complexidade de validation. Single-layer defesa (só confidence gate OU só golden-output) não é suficiente — confidence é self-reported pelo model, golden-output rule-based pode ter prior diferente do AI.
+
+**Unit 5 lockado:** ai_role=`execute`, classification=`blocked_by_missing_infra` (5 itens unit 4 + 5 extras específicos: error-detection corpus, win-screen UI, per-client confidence threshold storage, review queue UX, trigger-tone copy templates pre-approved). Hash: `52068a9d...213d69f313`.
+
+**Locked units count: 3 → 4** (phases 2, 3, 4, 5). Drift 0, exit 0.
+
+**Próximo: Step 6** — Q9 (paywall event) + Q10 (engagement entre month-end cycles).

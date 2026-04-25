@@ -71,6 +71,19 @@ Cada unit tem todos os campos abaixo. `validation_pattern` é MANDATORY (nunca b
   escalation_rule: "(1) Golden-output accuracy <95% no batch → halt auto-run pra futuros opt-ins; route todos pra Romeu/contador manual ate fix; rebuild AI conciliador com mais training data. (2) First-login completion rate <70% em 500 opt-ins → revisar onboarding UX + email subject line de provisioning. (3) Dispute rate >10% por user (lifetime) → user → review queue + 1:1 contact (likely persona mismatch). (4) Sustained dispute trend cross-users → halt execute, downgrade ai_role pra assist (require user click pra rodar)."
   dependencies: ["2", "3"]
 
+- phase_id: "5"
+  customer_action: "User experiencia first WIN — BaseIA surface error/discrepancy se AI encontra (confidence ≥95%), fallback clean conciliação report. Trigger-tone copy reforça win por persona."
+  io_signature: "IN: First conciliação output da unit 4 (golden-output ≥95% já validated) + AI error-detection pass (Sonnet 4.6) | OUT: User exposed to first WIN moment com win_type registered (error_found OR clean_report) + trigger-tone-matched comm + user feedback captured (error_relevance_confirm OR dismissed)"
+  decision_buttons: ["confirm_error_relevant", "dismiss_error", "share_win"]
+  validation_signature: "behavioral_self_report:error_relevance_confirm;golden_output:ai_error_claim_vs_rulebased;human_checkpoint:first_3_wins_per_client_review;metric_threshold:ai_confidence_on_error_claim>=0.95;metric_threshold:win_event_rate>=0.70@500optins;webhook_callback:error_dismissed_event;webhook_callback:win_event_capture"
+  unit_hash: "52068a9d1676b979c613721fa03afdfb47717d9d7f175b9a7b0a6a213d69f313"
+  responsibility: "Entregar first WIN perceptível ao user pós-onboarding: surface error/discrepancy via AI quando legítimo (high confidence + golden-output match), senão clean report; trigger-tone copy garante win é narrado em linguagem da persona; first 3 wins por client passam por review humano antes de display."
+  interface: "Input = unit 4 output (validated 1ª conciliação) + AI error-detection pass (Sonnet 4.6 segunda call) + trigger_self_report do user. Output = win-screen exibida com win_type ∈ {error_found, clean_report}, copy trigger-matched (gerada via Haiku 4.5 do unit 2 reusado), feedback button capture (confirm_error_relevant | dismiss_error | share_win)."
+  ai_role: "execute"
+  validation_pattern: "(1) AI confidence gate: error claim só surface se AI confidence ≥95% — high bar pra evitar false positives que matam trust. (2) Golden-output: AI error claim diff'd contra rule-based deterministic engine; ambos precisam flagar pra publicar. (3) Human checkpoint: primeiros 3 wins por client roteados pra Romeu/contador review queue antes de display (D0 trust insurance). (4) Behavioral self-report: user clica confirm_error_relevant OR dismiss_error → feedback loop. (5) Metric threshold: win-event-rate ≥70% medido em 500 opt-ins (value perception landing OR not). (6) Webhook callbacks: win_event_capture + error_dismissed_event."
+  escalation_rule: "(1) AI confidence <95% → fallback clean_report (sem error claim). (2) Golden-output mismatch entre AI e rule-based → human review queue (não display direto). (3) Primeiros 3 wins por client → Romeu/contador review obrigatório (D0 trust). (4) Error dismiss rate >20% sustentado num client → marca cliente como false-positive-prone, raise confidence threshold pra ele (pessoal); cross-client trend >20% → revisar AI error-detection model. (5) Win-event-rate <70% em 500 opt-ins → revisar copy + AI sensitivity de error detection (talvez bar muito alto)."
+  dependencies: ["4"]
+
 ---
 
 ## TBD units (parked)
