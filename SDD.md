@@ -46,14 +46,14 @@ Cada unit tem todos os campos abaixo. `validation_pattern` é MANDATORY (nunca b
 - phase_id: "2"
   customer_action: "Solo founder encontra wedge \"Regularizar CNPJ grátis\" e clica pro landing"
   io_signature: "IN: Search intent OR referral link OR anúncio paid OR founder content | OUT: User na wedge landing page com intent explícita de regularizar CNPJ"
-  decision_buttons: ["learn_more", "start_regularization", "talk_to_human"]
-  validation_signature: "golden_output:headline_ab_retention_d7;metric_threshold:landing_to_submit_conversion>=0.08@500sess;webhook_callback:submit_event_capture"
-  unit_hash: "4f382dbcd79c6f54d29f2a932f362a8e3e0fca2b13f376cc0c005593280c8eb5"
-  responsibility: "Capturar intenção explícita de regularizar CNPJ via landing page do wedge, com self-report do trigger e variant da headline."
-  interface: "Input = sessão de user com intent discovery-stage. Output = record no DB com {email, CNPJ, trigger_self_report, headline_variant, timestamp}, evento webhook downstream."
+  decision_buttons: ["is_existing_cnpj", "learn_more", "start_regularization", "talk_to_human", "waitlist_optin"]
+  validation_signature: "behavioral_self_report:cnpj_state_gate;golden_output:headline_ab_retention_d7;metric_threshold:landing_to_submit_conversion>=0.08@500sess;webhook_callback:submit_event_capture;webhook_callback:waitlist_optin_event"
+  unit_hash: "05a2ae6e84eba81c3dff8109aa3fbf88349b07f6cb6dfc2a821f356730819745"
+  responsibility: "Capturar intenção explícita de regularizar CNPJ via landing page do wedge, com gate de ICP (CNPJ existente sim/não), self-report do trigger e variant da headline."
+  interface: "Input = sessão de user com intent discovery-stage. Output (path-yes) = record no DB com {email, CNPJ, trigger_self_report, headline_variant, timestamp}, evento webhook downstream. Output (path-no) = educational page + opt-in opcional → record {email, intent='open_cnpj', cohort='waitlist'} pra nurture longo."
   ai_role: "assist"
-  validation_pattern: "(1) Metric threshold: landing→submit conversion ≥8% calibrado em janela de 500 sessões (anchor: B2B SaaS self-serve high-intent band 4-10%, Unbounce + daydream 2025 — mid-band conservador; researcher confidence medium, no BR-fintech-wedge benchmark). Revisit triggers: >15% (raise X — set too low) ou <4% (kill creative/wedge — below floor). (2) Webhook callback (n8n-style) no submit captura trigger+variant. (3) Golden-output A/B das 3 headlines, tie-breaker = retention D7."
-  escalation_rule: "Conversion <8% após 500 sessões completas → halt paid acquisition; rotate creative; Romeu aprova nova variant."
+  validation_pattern: "(1) Metric threshold: landing→submit conversion ≥8% calibrado em janela de 500 sessões (anchor: B2B SaaS self-serve high-intent band 4-10%, Unbounce + daydream 2025 — mid-band conservador; researcher confidence medium, no BR-fintech-wedge benchmark). Revisit triggers: >15% (raise X — set too low) ou <4% (kill creative/wedge — below floor). (2) Behavioral gate `is_existing_cnpj` antes de CTA: yes → flow regularizar; no → redirect educational (link externo Sebrae/parceiro) + opt-in waitlist (não default). (3) Webhook callback (n8n-style) no submit captura trigger+variant. (4) Webhook separado captura waitlist_optin (cohort off-ICP). (5) Golden-output A/B das 3 headlines, tie-breaker = retention D7."
+  escalation_rule: "(1) Conversion <8% após 500 sessões completas → halt paid acquisition; rotate creative; Romeu aprova nova variant. (2) Se `is_existing_cnpj`=no representar ≥30% das sessões sustentado, sinaliza canal misalign (atraindo pre-revenue não-ICP) — Romeu revisa headlines/keywords."
   dependencies: ["1"]
 
 ---

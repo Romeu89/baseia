@@ -375,3 +375,26 @@ Eu tinha afirmado no turn 3 que "steps 3+ da jornada são majoritariamente canal
 - Comm 'other' fica congelada até reclassificação. Se reclassificador é lento, user fica em limbo. Mitigação: escalation timeout (e.g., 48h) → manual review automático. **Parked como sub-item — não bloqueia finding #3 lock.**
 
 **Drift check:** 2 units, 0 drift, exit 0.
+
+### 2026-04-25 — Finding #10 LOCKED — gate `is_existing_cnpj` + waitlist opt-in pra path "abrir CNPJ"
+
+**Decision:** Visitor com intent "abrir CNPJ" no wedge → option C (hybrid educational + opt-in waitlist). Visitor primeiro responde gate `is_existing_cnpj` (yes/no). Path-yes proceeds wedge regularizar; path-no vai pra educational page com (1) link externo Sebrae/parceiro contábil pra abrir agora, (2) opt-in waitlist OPCIONAL (não default).
+
+**Why C:**
+- A (redirect off-funnel) honest mas perde lead pra sempre.
+- B (waitlist default) economia ruim: pre-revenue founders pivotam/fecham em ~50% dos casos no nurture window de 6-18m.
+- C força auto-qualificação via opt-in — só quem realmente planeja regularizar futuramente faz opt-in.
+
+**Edits aplicados:**
+- `CUSTOMER_JOURNEY.md` Phase 2 row 2 — system touchpoint expandido (gate + branches), comm trigger expandido (gate question), decision_buttons crescido de 3 → 5 (`is_existing_cnpj`, `learn_more`, `start_regularization`, `talk_to_human`, `waitlist_optin`), validation pattern prosa expandida com 5 sub-itens, validation signature expandida com 2 segmentos novos (`behavioral_self_report:cnpj_state_gate`, `webhook_callback:waitlist_optin_event`).
+- `SDD.md` unit 2 — `decision_buttons`, `validation_signature`, `responsibility`, `interface`, `validation_pattern`, `escalation_rule` atualizados.
+- `unit_hash` recomputado: `4f382dbc...` → `05a2ae6e...` (signature + buttons mudaram).
+
+**Trade-offs aceitos:**
+- Wedge agora tem step extra (gate antes de CTA) — adiciona friction. Mitigação: pergunta única binária, 2 segundos pro user.
+- Educational page + waitlist UI = build cost real. Vai virar item Phase 5 AI execution map (provavelmente low-AI: page é static + form opt-in).
+- Threshold "30% off-ICP rate sinaliza canal misalign" é unanchored (judgment call). Pode precisar revisita após 500 sessões reais.
+
+**Discovery (não-obvia):** unit 2 agora tem 2 outputs distintos por path (yes/no). Tecnicamente isso é split de unit em sub-units, mas mantemos como unit única com `interface` documentando ambos paths. Se complexidade crescer, finding #2 (próximo na queue, unit 1/2 split) pode acabar splitando unit 2 também — flagged.
+
+**Drift check:** 2 units, 0 drift, exit 0.
