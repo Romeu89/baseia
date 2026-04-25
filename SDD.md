@@ -1,6 +1,6 @@
 # System Design Document — BaseIA
 
-**Status:** Partial lock. Units pros steps 1 e 2 preenchidos. Steps 3+ parked aguardando Phase 1 interview completion.
+**Status:** Partial lock. Unit pro step 2 preenchido. Step 1 collapsed em finding #2 (validation circularity — trigger capture migra pra onboarding unit parked). Steps 3+ parked aguardando Phase 1 interview completion.
 **Source (Phase 2 table):** [`CUSTOMER_JOURNEY.md`](CUSTOMER_JOURNEY.md)
 **Drift checker:** [`_tools/hash_units.py`](_tools/hash_units.py)
 **Hash formula (bumped 2026-04-25 finding #7):** `sha256(phase_id + "|" + customer_action + "|" + io_signature + "|" + "|".join(sorted(decision_buttons)) + "|" + validation_signature)` where `validation_signature` is the canonical structured form from journey table col 9 (semicolon-joined `pattern_type:args` segments, sorted alphabetically).
@@ -30,18 +30,7 @@ Cada unit tem todos os campos abaixo. `validation_pattern` é MANDATORY (nunca b
 
 ## Units (locked)
 
-- phase_id: "1"
-  customer_action: "Solo founder experiencia 1+ dos 4 gatilhos (a/b/c/d)"
-  io_signature: "IN: Evento real no mundo (perda de FTE financeiro / erro de conciliação / teto MEI / FOMO competitivo) | OUT: Estado interno mudado: \"preciso resolver sem contratar CLT\""
-  decision_buttons: ["which_trigger"]
-  validation_signature: "behavioral_self_report:discovery_other_freetext;behavioral_self_report:trigger_select;human_checkpoint:persona_review_other;metric_threshold:other_rate<0.40@2week;metric_threshold:trigger_select_rate>=0.60@onboarding"
-  unit_hash: "50f7c32f51bcae0a53787c753ec3b92d18c5c0b763e7057982a49d2b3abaa7ab"
-  responsibility: "Detectar intenção emergente de resolver back-office sem contratar CLT, originada em um dos 4 gatilhos canônicos; capturar trigger 'other' via discovery prompt pra reclassificação."
-  interface: "Input = evento externo (não observável pelo sistema BaseIA). Output = trigger self-report capturado no primeiro touchpoint downstream (step 2 submission). Branch 'other': follow-up open-text → keyword reclassifier → ou a/b/c/d ou review queue."
-  ai_role: "assist"
-  validation_pattern: "Behavioral self-report em onboarding questionnaire (`which_trigger` MCQ a/b/c/d/other). Metric threshold: >60% self-select um dos 4 canônicos. Branch 'other' → discovery prompt (open-text follow-up) → keyword reclassifier tenta mapear pra a/b/c/d; sem match → review queue. Se 'other' ≥40% sustentado, persona missing triggers."
-  escalation_rule: "(1) Per-user: trigger='other' → comm congelada até reclassificação (discovery prompt + keyword match) ou inclusão em review queue. (2) Aggregate: 'other' rate ≥40% sustentado 2 semanas → Romeu revisa persona definition + considera ampliar taxonomia."
-  dependencies: []
+> **Step 1 collapsed (finding #2, 2026-04-25):** trigger event não é touchpoint observável (mental state pre-discovery). Validation circularity rejeitada. Trigger capture (`which_trigger` MCQ + discovery prompt for 'other' do finding #3) migra pra onboarding unit — currently parked, será locked durante Phase 1 interview (Phase C do session prompt). Comm matrix por trigger (a/b/c/d/other) permanece em CUSTOMER_JOURNEY.md como contexto de hypothesis pra headlines.
 
 - phase_id: "2"
   customer_action: "Solo founder encontra wedge \"Regularizar CNPJ grátis\" e clica pro landing"
@@ -54,7 +43,7 @@ Cada unit tem todos os campos abaixo. `validation_pattern` é MANDATORY (nunca b
   ai_role: "assist"
   validation_pattern: "(1) Metric threshold: landing→submit conversion ≥8% calibrado em janela de 500 sessões (anchor: B2B SaaS self-serve high-intent band 4-10%, Unbounce + daydream 2025 — mid-band conservador; researcher confidence medium, no BR-fintech-wedge benchmark). Revisit triggers: >15% (raise X — set too low) ou <4% (kill creative/wedge — below floor). (2) Behavioral gate `is_existing_cnpj` antes de CTA: yes → flow regularizar; no → redirect educational (link externo Sebrae/parceiro) + opt-in waitlist (não default). (3) Webhook callback (n8n-style) no submit captura trigger+variant. (4) Webhook separado captura waitlist_optin (cohort off-ICP). (5) Golden-output A/B das 3 headlines, tie-breaker = retention D7."
   escalation_rule: "(1) Conversion <8% após 500 sessões completas → halt paid acquisition; rotate creative; Romeu aprova nova variant. (2) Se `is_existing_cnpj`=no representar ≥30% das sessões sustentado, sinaliza canal misalign (atraindo pre-revenue não-ICP) — Romeu revisa headlines/keywords."
-  dependencies: ["1"]
+  dependencies: []
 
 ---
 

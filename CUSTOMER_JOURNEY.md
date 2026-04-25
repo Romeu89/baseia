@@ -28,7 +28,9 @@
 
 ---
 
-## Step 1 — Triggers (LOCKED)
+## Trigger context (hypothesis, NOT a journey unit)
+
+> **Collapsed em finding #2, 2026-04-25:** Trigger event não é touchpoint mensurável (mental state pre-discovery). Foi removido do SDD como unit. O que segue abaixo é **contexto hypothesis** pra informar headlines, comms e segmentação — não é step formal da journey. Trigger capture real (`which_trigger` MCQ + discovery prompt for 'other') vive em onboarding unit (parked, Phase 1 interview vai locar).
 
 Solo founder sofre um dos 4 gatilhos. Não é evento único — é padrão convergente.
 
@@ -48,9 +50,10 @@ Triggers a+c convergem; b e d têm comms distintas. `other` é discovery loop �
 
 **Todas as 9 colunas são mandatory per ULTRAPLAN constraint (col 9 adicionada 2026-04-25 finding #7). Coluna 8 (validation pattern) é prosa human-readable; coluna 9 (validation signature) é canonical hashable form.**
 
+> **Step 1 collapsed (finding #2, 2026-04-25):** Trigger event não é touchpoint observável (mental state pre-discovery). Trigger capture (`which_trigger` MCQ + discovery prompt for 'other') migra pra onboarding unit — parked, Phase 1 interview vai locar como step >2 com phase_id próprio. Trigger context fica documentado na seção acima. Numeração de steps preservada (phase_id 2 é primeiro unit lockado).
+
 | Step | Customer action | Input | Output | System touchpoint | Communication trigger | Decision/branch buttons | Validation pattern | Validation signature |
 |------|-----------------|-------|--------|-------------------|-----------------------|-------------------------|--------------------|----------------------|
-| 1 | Solo founder experiencia 1+ dos 4 gatilhos (a/b/c/d) | Evento real no mundo (perda de FTE financeiro / erro de conciliação / teto MEI / FOMO competitivo) | Estado interno mudado: "preciso resolver sem contratar CLT" | Nenhum (pre-discovery) | Nenhum ainda (emerge em step 2) | `which_trigger` (a/b/c/d/other) — afeta segmentação de comms downstream | **Behavioral self-report em onboarding questionnaire.** Pós-signup, user escolhe "o que trouxe você aqui?" entre os 4 triggers. Se `other`, follow-up open-text pra discovery; tenta keyword-match em a/b/c/d, sem match vira review queue. Metric threshold: >60% self-select um dos 4 canônicos (valida hipótese). Se `other` ≥40% sustentado, persona missing triggers — Romeu revisa taxonomia. | `behavioral_self_report:discovery_other_freetext`; `behavioral_self_report:trigger_select`; `human_checkpoint:persona_review_other`; `metric_threshold:other_rate<0.40@2week`; `metric_threshold:trigger_select_rate>=0.60@onboarding` |
 | 2 | Solo founder encontra wedge "Regularizar CNPJ grátis" e clica pro landing | Search intent OR referral link OR anúncio paid OR founder content | User na wedge landing page com intent explícita de regularizar CNPJ | Wedge landing page (web) com gate `is_existing_cnpj` (yes/no); branch yes → flow regularizar; branch no → educational redirect + waitlist opt-in | Headline variants por trigger: a/c → "Regularize seu CNPJ sem contratar contador fixo"; b → "Regularize seu CNPJ sem travar no mês"; d → "Como outros founders estão regularizando com IA"; gate "Você já tem CNPJ?" precede CTA de produto | `is_existing_cnpj` (gate yes/no antes de tudo) / `start_regularization` (primary CTA path-yes) / `talk_to_human` (secondary escape) / `learn_more` (educational) / `waitlist_optin` (path-no opt-in) | **Metric threshold + webhook callback + behavioral gate.** (1) Conversion landing → email/CNPJ submit ≥8% em 500 sessões (anchor: B2B SaaS self-serve high-intent 4-10%, Unbounce/daydream 2025); revisit >15%/<4%; **(2) Gate `is_existing_cnpj`** filtra ICP — visitor "no" (pre-revenue, intent abrir CNPJ) vai pra educational page com link externo (Sebrae/parceiro contábil) + opt-in waitlist (não default); (3) Webhook n8n no submit captura trigger+variant; (4) Webhook separado no waitlist_optin captura cohort off-ICP pra nurture longo (12-18m); (5) A/B golden-output 3 headlines, retention @ D7 tie-breaker. | `behavioral_self_report:cnpj_state_gate`; `golden_output:headline_ab_retention_d7`; `metric_threshold:landing_to_submit_conversion>=0.08@500sess`; `webhook_callback:submit_event_capture`; `webhook_callback:waitlist_optin_event` |
 | 3 | TBD — Primeiro contato | TBD | TBD | TBD | TBD | TBD | TBD — **Phase 1 interview incomplete.** Romeu completa interativamente. | TBD |
 | 4 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |

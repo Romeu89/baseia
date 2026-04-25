@@ -398,3 +398,51 @@ Eu tinha afirmado no turn 3 que "steps 3+ da jornada são majoritariamente canal
 **Discovery (não-obvia):** unit 2 agora tem 2 outputs distintos por path (yes/no). Tecnicamente isso é split de unit em sub-units, mas mantemos como unit única com `interface` documentando ambos paths. Se complexidade crescer, finding #2 (próximo na queue, unit 1/2 split) pode acabar splitando unit 2 também — flagged.
 
 **Drift check:** 2 units, 0 drift, exit 0.
+
+### 2026-04-25 — Finding #2 LOCKED — collapse unit 1 (validation circularity rejected)
+
+**Decision:** Drop unit 1 do SDD lockset (option A). Trigger event não é touchpoint observável — é mental state pre-discovery. Validation pattern original ("behavioral self-report em onboarding") era circular: unit 1 valida-se via dados gerados em unit downstream que ainda nem existe.
+
+**Why A (não C nem B):**
+- C (keep + relabel): cosmético — renomeia o problema sem resolver. Mantém zumbi unit no SDD.
+- B (split com pre-landing measurement): over-engineering. Requer ad-targeting + search analytics infra antes do user se identificar. Custo alto, ROI baixo early-stage.
+- A (collapse): honra o princípio "unit sem validation_pattern legítimo não deve existir no lockset".
+
+**Edits aplicados:**
+- `SDD.md` Status: "Units 1 e 2" → "Unit 2 (step 1 collapsed)".
+- `SDD.md` Units (locked): bloco YAML do phase_id="1" deletado; substituído por nota explicativa do collapse.
+- `SDD.md` unit 2 dependencies: `["1"]` → `[]`.
+- `CUSTOMER_JOURNEY.md` "Step 1 — Triggers (LOCKED)" → "Trigger context (hypothesis, NOT a journey unit)" — comm matrix preservada como contexto pra headlines.
+- `CUSTOMER_JOURNEY.md` Phase 2 table: row 1 deletada; nota explicativa acima da tabela documenta o collapse e o que migra pra onboarding.
+
+**Onde mora o trigger capture agora:**
+- `which_trigger` MCQ (a/b/c/d/other) → onboarding unit (parked, Phase 1 interview vai locar)
+- Discovery prompt for `other` (finding #3) → mesmo onboarding unit (parked)
+- Persona review trigger (`other` ≥40%) → escalation rule do mesmo onboarding unit
+
+Tudo isso vira validation_signature do future onboarding unit, não do step 2.
+
+**Trade-offs aceitos:**
+- Locked units cai de 2 → 1 temporariamente. Fica assim até Phase 1 interview locar onboarding unit. Não é regressão — é honestidade sobre o que de fato foi medido.
+- `ai_role: assist` que tinha bumpado em finding #3 (keyword reclassifier do discovery prompt) também migra pra onboarding unit junto.
+- Numeração de phase_id mantida (skip phase 1, primeiro lockado é phase_id=2). Evita renumeração que quebraria refs em REMOTE_REVIEW.md, research files, etc.
+
+**Drift check:** 1 unit hashed, 0 drift, exit 0.
+
+### 2026-04-25 — Part B COMPLETE — 5 findings locked
+
+| # | Finding | Decision | Hash impact |
+|---|---|---|---|
+| 1 | X threshold em unit 2 | 8% / 500 sessões / revisit triggers | unit 2 prose only (não hashed inicialmente) |
+| 7 | hash inclui validation_signature? | C — canonical structure (semicolon delim) | schema bumped; recompute units 1 e 2 |
+| 3 | comm tone pra trigger='other' | C — discovery prompt + keyword reclassifier | unit 1 hash bumped (depois collapsed) |
+| 10 | visitor 'abrir CNPJ' wedge | C — gate `is_existing_cnpj` + opt-in waitlist | unit 2 hash bumped + buttons grew 3→5 |
+| 2 | unit 1 validation circularity | A — collapse, migra capture pra onboarding parked | unit 1 removido do SDD |
+
+**Estado final pós-Part B:**
+- Locked units: 1 (phase_id=2)
+- Parked units: phase_id=3, 4, 5+ (Phase 1 interview vai locar onboarding e demais)
+- Schema: 9 cols mandatory, validation_signature canonical hashable
+- All 5 findings de blocking/important resolvidos. Findings minor (#4, #5, #6, #8, #9) ficam em PR separado depois.
+
+**Pronto pra Part C** — Phase 1 interview steps 3+ TDD-style com onboarding unit como primeira meta (capture pendente do collapse).
