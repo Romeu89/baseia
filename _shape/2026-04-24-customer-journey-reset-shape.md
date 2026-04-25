@@ -351,3 +351,27 @@ Eu tinha afirmado no turn 3 que "steps 3+ da jornada são majoritariamente canal
 - Backtick wrap nas signatures cells é cosmético (markdown display) — parser strip-a.
 
 **Drift check pós-implementação:** 2 units, 0 drift, exit 0. Self-test 30/30 PASS.
+
+### 2026-04-25 — Finding #3 LOCKED — comm tone pra trigger='other' = Discovery prompt
+
+**Decision:** 5ª comm tone do `which_trigger` = **Discovery prompt** (option C, escolhido por Romeu). Follow-up open-text "o que te trouxe aqui?" → keyword match em a/b/c/d ou review queue.
+
+**Why C (não A nem B):**
+- A (generic nurture): perde signal — não learn nada com 'other'.
+- B (manual review queue): honest mas vira gargalo humano em escala.
+- C (discovery prompt): converte 'other' em learning loop. Captura trigger novo OU reclassifica retroativamente. Custa UI extra e introduz friction de 1 step.
+
+**Edits aplicados:**
+- `CUSTOMER_JOURNEY.md` Step 1 trigger matrix — adiciona 5ª linha `other` com discovery loop spec; nota explicativa "discovery loop, não comm tactic estável".
+- `CUSTOMER_JOURNEY.md` Phase 2 row 1 — validation pattern prosa expandida com branch 'other'; validation signature ganha `behavioral_self_report:discovery_other_freetext`.
+- `SDD.md` unit 1 — `validation_pattern` (prose), `validation_signature`, `responsibility`, `interface`, `ai_role`, `escalation_rule` atualizados.
+- `unit_hash` recomputado: `004ec912...` → `50f7c32f...` (signature mudou).
+
+**Discovery flagged: ai_role unit 1 mudou de `none` → `assist`.** Keyword reclassifier do discovery loop é componente AI (regex/embedding match). Por definição do vocab, `assist` = "AI auxilia humano (copilot-style, rascunhos, sugestões). Humano decide." Reclassifier propõe trigger; sem match → human revisa via review queue. Bate com `assist`.
+
+**Trade-offs aceitos:**
+- Friction extra no funnel pra cohort 'other' — aceitável porque cohort 'other' já é signal de problema, não de revenue path.
+- Keyword reclassifier requer setup (lista de keywords por trigger). Build cost real pra Phase 5 — vai virar item no AI execution map.
+- Comm 'other' fica congelada até reclassificação. Se reclassificador é lento, user fica em limbo. Mitigação: escalation timeout (e.g., 48h) → manual review automático. **Parked como sub-item — não bloqueia finding #3 lock.**
+
+**Drift check:** 2 units, 0 drift, exit 0.

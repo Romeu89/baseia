@@ -34,13 +34,13 @@ Cada unit tem todos os campos abaixo. `validation_pattern` é MANDATORY (nunca b
   customer_action: "Solo founder experiencia 1+ dos 4 gatilhos (a/b/c/d)"
   io_signature: "IN: Evento real no mundo (perda de FTE financeiro / erro de conciliação / teto MEI / FOMO competitivo) | OUT: Estado interno mudado: \"preciso resolver sem contratar CLT\""
   decision_buttons: ["which_trigger"]
-  validation_signature: "behavioral_self_report:trigger_select;human_checkpoint:persona_review_other;metric_threshold:other_rate<0.40@2week;metric_threshold:trigger_select_rate>=0.60@onboarding"
-  unit_hash: "004ec912b159e990e90bc0ad86d3ace226899866977d3ad44afb3053a4b51c60"
-  responsibility: "Detectar intenção emergente de resolver back-office sem contratar CLT, originada em um dos 4 gatilhos canônicos."
-  interface: "Input = evento externo (não observável pelo sistema BaseIA). Output = trigger self-report capturado no primeiro touchpoint downstream (step 2 submission)."
-  ai_role: "none"
-  validation_pattern: "Behavioral self-report em onboarding questionnaire. Metric threshold: >60% self-select um dos 4 triggers canônicos. Se 'other' ≥40%, persona missing triggers — human revisa."
-  escalation_rule: "Self-report 'other' ≥40% sustentado 2 semanas → human (Romeu) revisa persona definition antes de continuar."
+  validation_signature: "behavioral_self_report:discovery_other_freetext;behavioral_self_report:trigger_select;human_checkpoint:persona_review_other;metric_threshold:other_rate<0.40@2week;metric_threshold:trigger_select_rate>=0.60@onboarding"
+  unit_hash: "50f7c32f51bcae0a53787c753ec3b92d18c5c0b763e7057982a49d2b3abaa7ab"
+  responsibility: "Detectar intenção emergente de resolver back-office sem contratar CLT, originada em um dos 4 gatilhos canônicos; capturar trigger 'other' via discovery prompt pra reclassificação."
+  interface: "Input = evento externo (não observável pelo sistema BaseIA). Output = trigger self-report capturado no primeiro touchpoint downstream (step 2 submission). Branch 'other': follow-up open-text → keyword reclassifier → ou a/b/c/d ou review queue."
+  ai_role: "assist"
+  validation_pattern: "Behavioral self-report em onboarding questionnaire (`which_trigger` MCQ a/b/c/d/other). Metric threshold: >60% self-select um dos 4 canônicos. Branch 'other' → discovery prompt (open-text follow-up) → keyword reclassifier tenta mapear pra a/b/c/d; sem match → review queue. Se 'other' ≥40% sustentado, persona missing triggers."
+  escalation_rule: "(1) Per-user: trigger='other' → comm congelada até reclassificação (discovery prompt + keyword match) ou inclusão em review queue. (2) Aggregate: 'other' rate ≥40% sustentado 2 semanas → Romeu revisa persona definition + considera ampliar taxonomia."
   dependencies: []
 
 - phase_id: "2"
