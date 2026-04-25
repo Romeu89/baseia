@@ -49,8 +49,8 @@ Cada unit tem todos os campos abaixo. `validation_pattern` é MANDATORY (nunca b
   responsibility: "Capturar intenção explícita de regularizar CNPJ via landing page do wedge, com self-report do trigger e variant da headline."
   interface: "Input = sessão de user com intent discovery-stage. Output = record no DB com {email, CNPJ, trigger_self_report, headline_variant, timestamp}, evento webhook downstream."
   ai_role: "assist"
-  validation_pattern: "(1) Metric threshold: landing→submit conversion ≥X% (X a calibrar; define Phase 5 go/no-go). (2) Webhook callback (n8n-style) no submit captura trigger+variant. (3) Golden-output A/B das 3 headlines, tie-breaker = retention D7."
-  escalation_rule: "Conversion sustentada <X% por 2 semanas → halt paid acquisition; rotate creative; Romeu aprova nova variant."
+  validation_pattern: "(1) Metric threshold: landing→submit conversion ≥8% calibrado em janela de 500 sessões (anchor: B2B SaaS self-serve high-intent band 4-10%, Unbounce + daydream 2025 — mid-band conservador; researcher confidence medium, no BR-fintech-wedge benchmark). Revisit triggers: >15% (raise X — set too low) ou <4% (kill creative/wedge — below floor). (2) Webhook callback (n8n-style) no submit captura trigger+variant. (3) Golden-output A/B das 3 headlines, tie-breaker = retention D7."
+  escalation_rule: "Conversion <8% após 500 sessões completas → halt paid acquisition; rotate creative; Romeu aprova nova variant."
   dependencies: ["1"]
 
 ---

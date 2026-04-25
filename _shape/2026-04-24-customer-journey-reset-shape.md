@@ -282,3 +282,38 @@ Eu tinha afirmado no turn 3 que "steps 3+ da jornada são majoritariamente canal
 **Verdict consolidado:** Tooling GREEN (22/22 self-test, 0 drift). Phase 1 interview GO com Romeu (script de 15 Qs pronto). Phases 2-5 NO-GO até reconciliação git + 5 decisões pendentes do Romeu.
 
 **Append-only respeitado:** sem rewrite das entries anteriores; Phase Status table (linhas 257-268) fica com snapshot 2026-04-24 — relatório novo é a fonte de verdade atual.
+
+### 2026-04-25 — Part A complete — git reconciled vs merged PR #1
+
+**Decision:** Pulou re-signing (manter `N`); rebased `claude/phase1-remote-review` onto `origin/main` + force-with-lease push; PR #2 retargeted base de `claude/phase1-interview` (deletado/merged) pra `main`.
+
+**State pós-Part A:**
+- HEAD = `d15c1f4` (era `6c50082`); 6 commits replayed clean sem conflito
+- `git config user.email` = `romeuhrechdan@gmail.com` (já estava — reauthor desnecessário)
+- PR #2 OPEN, base=main, head=claude/phase1-remote-review
+- `python3 _tools/hash_units.py --self-test`: 22 PASS, exit 0
+- `python3 _tools/hash_units.py`: 2 units, 0 drift, exit 0
+
+**Why skip signing:** Romeu autorizou (3 perguntas via AskUserQuestion). Trade-off aceito: commits ficam unsigned no GitHub (badge ausente) em troca de zero rebase destrutivo extra.
+
+### 2026-04-25 — Finding #1 LOCKED — X threshold = 8% / window = 500 sessões
+
+**Decision:** Unit 2 conversion threshold = **≥8%** medido em janela de **500 sessões** (volume-anchored, não time-anchored). Revisit triggers: **>15%** (X set too low — raise) ou **<4%** (below floor — kill creative/wedge).
+
+**Why:**
+- Anchor: B2B SaaS self-serve high-intent benchmark band 4-10% (Unbounce + daydream 2025). 8% = mid-band conservador.
+- Volume-anchor (500 sessões) substitui "2 semanas" original do SDD.md:53 — robusto a low-traffic; pareado com 8% = ~40 conversions mínimas pra significância.
+- Researcher confidence medium — sem BR-fintech-wedge benchmark; todos candidatos são US/global B2B SaaS proxies.
+- Form-length tailwind: BaseIA wedge tem 2-3 fields vs 6+ "lift de 120%" (Unbounce) — favorável.
+
+**Trade-offs aceitos:**
+- Threshold US-anchored sem BR-specific data — risco de calibration off na realidade pt-BR (mitigado por revisit triggers).
+- Time-based escalation antigo (2 semanas) substituído por volume — mais robusto mas deixa cenários de tráfego muito baixo sem deadline temporal explícito.
+
+**Edits aplicados (same-turn):**
+- `SDD.md` unit 2 — `validation_pattern` + `escalation_rule` reescritos com 8% / 500 sessões / revisit triggers + source citation.
+- `CUSTOMER_JOURNEY.md` Phase 2 row 2 — coluna validation pattern atualizada com mesmos números + anchors.
+
+**Discovery não-obvia (alimenta finding #7):** unit 2 hash NÃO mudou pós-edit. `_tools/hash_units.py:67` formula é `sha256(phase_id + customer_action + io_signature + sorted(decision_buttons))` — `validation_pattern` e `escalation_rule` ficam fora. Ou seja, mudei a regra de validação core do step e o drift checker não nota. **Isso é exatamente o gap que finding #7 chama** ("hash inclui `validation_pattern`?") — vai ser próxima decisão na queue.
+
+**Split unit 2 em (a) capture + (b) first-payment (research finding #4):** adiado pra finding #2 da queue (unit 1/2 split discussion). Não resolvido aqui.
