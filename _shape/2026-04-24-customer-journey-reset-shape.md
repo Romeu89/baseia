@@ -694,3 +694,61 @@ Missing infra cumulativa Phase 1 (units 2 + 3 + 4 + 5 + 6) = ~15 itens:
 - Cashflow_Conciliador SQL/docker/scripts NÃO migrated — Phase 5 vai re-build infra com decisões novas, não importar legacy plumbing.
 
 **Pronto pra Part F — Phase 4+5 final lock + re-validation.**
+
+### 2026-04-25 — Part F COMPLETE — Phase 4+5 final lock + Finding 4 correction
+
+**Critical correction caught:** Units 2 e 3 estavam classificadas `ai_executable_at_scale` MAS `missing_infra` non-empty (feature-flag/A-B infra, opt-in DBs, n8n bot infra com confidence/scope, FAQ KB editável, etc). Isso violava Finding 4 do REMOTE_REVIEW (`ai_executable_at_scale` só com missing_infra vazio). Corrigido: TODOS os 5 units agora `blocked_by_missing_infra`.
+
+**Princípio derivado #2 documentado em AI_EXECUTION_MAP.md:** hierarquia missing_infra > validation_pattern > AI capability. SDD lockset reflete o que **roda hoje**, não o que **rodaria se tivéssemos build**. Aspiration vai pra `model_pattern`, gate vai pra `classification`.
+
+**Final validation suite (todos passaram):**
+- `python3 _tools/hash_units.py --self-test`: 30/30 PASS, exit 0
+- `python3 _tools/hash_units.py`: 5 units hashed, 0 drift, exit 0
+- SDD.md `validation_pattern` count: 6 (1 schema ref + 5 unit blocks); 0 blanks ✓
+- AI_EXECUTION_MAP classification breakdown: 5× `blocked_by_missing_infra`, 0× outros ✓
+- Finding 4 invariant: 5/5 rows com missing_infra non-empty E classification=blocked_by_missing_infra. NÃO há row violando o invariante ✓
+
+### 2026-04-25 — ULTRAPLAN ciclo 1 COMPLETO
+
+**Estado final do design (pointer):**
+
+| Artifact | Status | Pointer |
+|---|---|---|
+| Persona v0.2 | LOCKED | `CUSTOMER_JOURNEY.md` Persona section + this shape |
+| Canal de discovery | LOCKED | Step 2 wedge "regularizar CNPJ grátis" — `CUSTOMER_JOURNEY.md` row 2 |
+| Phase 2 flowchart table (9 cols) | LOCKED | `CUSTOMER_JOURNEY.md` Phase 2 — 5 rows lockadas (units 2-6) |
+| Mermaid flowchart visual | LOCKED | `CUSTOMER_JOURNEY.md` Mermaid section — validated via MCP |
+| SDD units (with hash + validation_signature) | LOCKED | `SDD.md` — 5 units lockadas (phases 2-6) |
+| AI Execution Map | LOCKED | `AI_EXECUTION_MAP.md` — 5 rows, todas blocked_by_missing_infra (Phase 5 unblock = ~15 infra items) |
+| Hash drift checker | LOCKED | `_tools/hash_units.py` — schema bumped via finding #7 (col 9 `validation_signature` semicolon-separated, sorted alpha) |
+| Legacy reconciliation | DONE | `DOC_RECONCILIATION.md` Execution Record + `_shape/2026-04-25-legacy-insights-extracted.md` |
+| Shape (decision log) | LIVE | This file (`_shape/2026-04-24-customer-journey-reset-shape.md`) |
+
+**Findings resolution status:**
+- #1 (X threshold) — ✓ LOCKED (8% / 500 sessões / revisit triggers)
+- #2 (unit 1 circularity) — ✓ LOCKED (collapsed)
+- #3 (other comm tone) — ✓ LOCKED (discovery prompt + reclassifier)
+- #4 (ai_executable when missing_infra empty) — ✓ LOCKED (corrected in Part F: all 5 units now blocked_by_missing_infra)
+- #7 (hash inclui validation_signature) — ✓ LOCKED (option C canonical structure)
+- #10 (open CNPJ visitor) — ✓ LOCKED (gate `is_existing_cnpj` + waitlist opt-in)
+- #5, #6, #8, #9 (minor) — DEFERRED (Romeu autoriza batch fix em PR separado depois)
+
+**Phases status:**
+- Phase 1 (customer journey interview) — ✓ COMPLETE (Q1-Q11 todos resolvidos; Step 1 collapsed; Steps 2-6 lockados; Steps 7+ deferred Phase 2)
+- Phase 2 (flowchart lock + Mermaid) — ✓ COMPLETE
+- Phase 3 (doc reconciliation) — ✓ COMPLETE (Strategy B)
+- Phase 4 (SDD com hash + validation_pattern) — ✓ COMPLETE (5 units lockadas)
+- Phase 5 (AI execution map) — ✓ COMPLETE (todas 5 rows com classification + model_pattern + missing_infra documented)
+
+**Próximos passos pós-handoff:**
+- PR #2 (`claude/phase1-remote-review` → main) merge quando Romeu autorizar
+- Phase 5 implementation: build os ~15 missing_infra items pra unblock units 2-6 → ai_executable_at_scale real
+- Phase 2 design (steps 7+ referral/expansion) quando ≥N paying clients sustentados ≥M meses (definir M/N)
+- Minor findings batch fix (#5, #6, #8, #9) em PR separado
+
+**Total work this session (`claude/phase1-remote-review` branch):**
+- Commits: 11 (a4cdfa8 → 1c7d569 + Part F final)
+- Files modified: SDD.md, CUSTOMER_JOURNEY.md, AI_EXECUTION_MAP.md, _tools/hash_units.py, DOC_RECONCILIATION.md, _shape/* (multiple), legacy-imports/cashflow-conciliador/* (created)
+- Schema changes: Phase 2 table 8→9 cols (validation_signature mandatory)
+- Hash recomputes: 6 (units 1-2 from finding #7 → unit 1 deleted → unit 2 from #10 → unit 2 from Q4 + units 4-5-6 added)
+- Self-test: 22 → 30 PASS
