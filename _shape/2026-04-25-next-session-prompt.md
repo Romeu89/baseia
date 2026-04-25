@@ -1,18 +1,14 @@
-# Prompt — Next Session (paste no Claude local)
-
-Cole **tudo abaixo da linha `===== START =====`** como primeira mensagem da nova sessão Claude (Cursor ou terminal). Repo: `Romeu89/baseia` checked out localmente.
-
-===== START =====
-
 # Você é
 
-Claude session local da Romeu (Romeu89/baseia). Sessão remota anterior parou em `bef788a` (branch `claude/phase1-remote-review`, unsigned, sem push). Tua missão: (A) reconciliar git, (B) destravar 5 findings com Romeu, (C) rodar interview Phase 1 steps 3+ em modo TDD-style, (D) fechar Phases 2-5 do ULTRAPLAN.
+Claude session local de Romeu (Romeu89/baseia). Sessão remota anterior parou em `bef788a` (branch `claude/phase1-remote-review`, unsigned, sem push). Tua missão: (A) reconciliar git, (B) destravar 5 findings com Romeu, (C) rodar interview Phase 1 steps 3+ em modo TDD-style, (D) fechar Phases 2-5 do ULTRAPLAN.
 
-## Mandatory primeira leitura (ordem estrita, summarize cada uma em 2 frases antes da próxima)
+## Mandatory primeira leitura (ordem estrita; summarize cada uma em 2 frases antes da próxima)
 
-1. `_shape/2026-04-25-readiness-validation.md` — relatório go/no-go atual. Source of truth pra estado.
+1. `_shape/2026-04-25-readiness-validation.md` — relatório go/no-go. Source of truth do estado atual.
 2. `_shape/AUTONOMOUS_RUN_REPORT.md` — Resume Contract anterior (estagnado, mas tem invariants + parked items).
 3. `CLAUDE.md` + `.claude/rules/` (se ainda não na memória) — non-negotiables.
+
+Não responde a Romeu além de saudação até os 3 estarem summarized.
 
 ## Parte A — Reconciliar git e PR (não pular steps)
 
@@ -20,48 +16,52 @@ Claude session local da Romeu (Romeu89/baseia). Sessão remota anterior parou em
 git fetch
 git checkout claude/phase1-remote-review
 git pull
-git log -1 --format='%h %ae %s'   # esperado: bef788a noreply@anthropic.com readiness:...
-git config user.email              # esperado: romeuhrechdan@gmail.com (scoped)
+git log -1 --format='%h %ae %s'
+git config user.email
 ```
 
-Se `user.email` ≠ romeuhrechdan@gmail.com:
+Esperado: HEAD = `ff77847` (next-session prompt) ou `bef788a` (readiness validation), committer = `noreply@anthropic.com`.
+
+Se `user.email` ≠ `romeuhrechdan@gmail.com`:
 
 ```bash
 git config user.email romeuhrechdan@gmail.com
 git config user.name "Romeu Hungria Rechdan"
 ```
 
-Reauthor + sign do commit (sandbox remote não pôde signar):
+Reauthor + sign os 2 commits unsigned (sandbox remoto não pôde signar):
 
 ```bash
-git commit --amend --reset-author --no-edit
-git log -1 --format='%h %ae %G?'   # esperado: <novo SHA> romeuhrechdan@gmail.com G (good signature)
+git rebase HEAD~2 --exec "git commit --amend --reset-author --no-edit -S"
+git log --format='%h %ae %G?' -3
 ```
+
+Esperado: 2 SHAs novos, committer = `romeuhrechdan@gmail.com`, signature = `G` (good).
 
 Push + reconciliar PR:
 
 ```bash
-git remote -v                                          # confirma origin = git@github.com:Romeu89/baseia.git
+git remote -v
 git push --force-with-lease origin claude/phase1-remote-review
-gh pr list --state all                                 # vê PR #1 + qualquer stacked
+gh pr list --state all
 ```
 
 Romeu decide com base em `gh pr list`:
-- Se PR #1 ainda aberto contra `main` com base `claude/phase1-interview` outdated → opção (a) rebase + force-push, (b) close + new PR contra main, (c) keep stacked.
+- Se PR #1 ainda aberto contra `main` com base outdated → (a) rebase + force-push, (b) close + new PR contra main, (c) keep stacked.
 - Se PR #1 já merged → cria novo PR `claude/phase1-remote-review` → `main`.
 
 Re-roda tooling pra confirmar:
 
 ```bash
-python _tools/hash_units.py --self-test    # 22 PASS
-python _tools/hash_units.py                # 2 units, no drift
+python _tools/hash_units.py --self-test
+python _tools/hash_units.py
 ```
 
-**Halt se qualquer falhar.** Reporta antes de prosseguir.
+Esperado: 22 PASS + 0 drift. **Halt se qualquer falhar.** Reporta antes de prosseguir.
 
 ## Parte B — Destravar 5 findings (one-decision-per-turn)
 
-Per `_shape/2026-04-25-readiness-validation.md` seção 4. Aborda nesta ordem:
+Per `_shape/2026-04-25-readiness-validation.md` § 4. Aborda nesta ordem:
 
 | Ordem | Finding | Pergunta pra Romeu | Owner deliverable |
 |---|---|---|---|
@@ -156,5 +156,3 @@ Após ler os 3 arquivos mandatory:
 > Pronto pra Parte A (reconciliar git). Confirma `pwd`, `git status`, e me diz se quer que eu rode os commands ou só dite e tu executas?"
 
 Espera. Não toca em nada do plano antes de Romeu confirmar.
-
-===== END =====
