@@ -81,11 +81,114 @@ Cada step ≥1 pattern. Múltiplos permitidos. Sem pattern = step não entra no 
 
 ## Mermaid flowchart
 
-**PARKED — Phase 1 steps 3+ incompletos.**
+**LOCKED 2026-04-25** (Phase 1 interview complete, Q1-Q11 todos resolvidos). Validated via Mermaid Chart MCP (`valid: true`, diagramType=flowchart).
 
-Render do flowchart visual espera Phase 1 interview completar. Rationale: Mermaid com só 2 steps não ajuda nada — desperdício de esforço antes de ter jornada completa.
+```mermaid
+flowchart TD
+    Triggers["Trigger context (a/b/c/d/other)<br/>Hypothesis only — NOT a unit"]:::context
 
-**Ao retomar:** gerar Mermaid do Phase 2 table completo, validar sintaxe em scratch file local (sem MCP Mermaid no env), inserir aqui.
+    Step2["Step 2: Wedge landing<br/>'Regularizar CNPJ grátis'"]:::unit
+    Gate{"is_existing_cnpj?"}
+    EduPage["Educational page<br/>+ external link Sebrae/contador"]
+    WaitlistOptin{"waitlist_optin?"}
+    WaitlistDB[("Off-ICP cohort<br/>nurture 12-18m")]
+    OffFunnel(["End — off-funnel"]):::endNode
+    Submit["Submit form:<br/>email + CNPJ + trigger +<br/>back_office_optin?"]
+
+    Triggers --> Step2
+    Step2 --> Gate
+    Gate -- "no" --> EduPage
+    EduPage --> WaitlistOptin
+    WaitlistOptin -- "yes" --> WaitlistDB
+    WaitlistOptin -- "no" --> OffFunnel
+    Gate -- "yes" --> Submit
+
+    Step3["Step 3: Auto-responder D0<br/>+ tiered reply handler"]:::unit
+    BotTriage{"Reply received?"}
+    BotResolve["Bot answers FAQ"]
+    HumanEscalate["Romeu/contador<br/>handle escalation"]
+
+    Submit --> Step3
+    Step3 --> BotTriage
+    BotTriage -- "in scope" --> BotResolve
+    BotTriage -- "out of scope" --> HumanEscalate
+
+    OptinCheck{"back_office_optin?"}
+    WedgeOnly(["End — wedge-only customer"]):::endNode
+    Step4["Step 4: Onboarding<br/>1ª conciliação auto"]:::unit
+    GoldenCheck{"Golden-output ≥95%?"}
+    DisputeQueue[("Romeu/contador<br/>review queue")]
+    ApprovalGate{"Future runs?"}
+
+    Submit --> OptinCheck
+    OptinCheck -- "no" --> WedgeOnly
+    OptinCheck -- "yes" --> Step4
+    Step4 --> GoldenCheck
+    GoldenCheck -- "no" --> DisputeQueue
+    GoldenCheck -- "yes" --> ApprovalGate
+    DisputeQueue --> Step5
+    ApprovalGate -- "approve OR keep_manual" --> Step5
+    ApprovalGate -- "dispute_first_run" --> DisputeQueue
+
+    Step5["Step 5: First WIN<br/>error_found OR clean"]:::unit
+    ErrorDetect{"AI confidence ≥95%?"}
+    GoldenWin{"Rule-based agrees?"}
+    First3Check{"First 3 wins this client?"}
+    CleanPath["Display clean_report"]
+    WinScreen["Win-screen rendered<br/>(trigger-tone copy)"]
+    UserFeedback{"User clicks?"}
+    RetrainSignal[("Feedback loop")]
+    ReferralOut(["End Phase 1<br/>referral = Phase 2"]):::endNode
+
+    Step5 --> ErrorDetect
+    ErrorDetect -- "yes" --> GoldenWin
+    GoldenWin -- "yes" --> First3Check
+    GoldenWin -- "no" --> CleanPath
+    ErrorDetect -- "no" --> CleanPath
+    First3Check -- "yes 1-3" --> DisputeQueue
+    First3Check -- "no >3" --> WinScreen
+    CleanPath --> WinScreen
+    WinScreen --> UserFeedback
+    UserFeedback -- "confirm_error_relevant" --> Step6
+    UserFeedback -- "dismiss_error" --> RetrainSignal
+    UserFeedback -- "share_win" --> ReferralOut
+    RetrainSignal --> Step6
+
+    Step6["Step 6: Retention loop<br/>paywall + push"]:::unit
+    NCheck{"N ≥ 3 successful?"}
+    RecurringRun["Recurring conciliação<br/>n8n cron mensal"]
+    PaywallDisplay["Paywall display"]
+    ChurnDecide{"User decides?"}
+    PayingActive(["Paying active"]):::endNode
+    Churned[("Churned + survey")]
+    PushLoop{"Unusual txn?"}
+    PushDispatch["Push notification"]
+    PhaseEnd(["End Phase 1<br/>Steps 7+ = Phase 2"]):::endNode
+
+    Step6 --> NCheck
+    NCheck -- "no" --> RecurringRun
+    RecurringRun --> NCheck
+    NCheck -- "yes" --> PaywallDisplay
+    PaywallDisplay --> ChurnDecide
+    ChurnDecide -- "accept_paywall" --> PayingActive
+    ChurnDecide -- "decline_paywall" --> Churned
+    PayingActive --> PushLoop
+    PushLoop -- "yes" --> PushDispatch
+    PushLoop -- "no" --> RecurringRun
+    PushDispatch --> PhaseEnd
+
+    classDef unit fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    classDef context fill:#fff3e0,stroke:#f57c00,stroke-width:1px,stroke-dasharray:5 5,color:#000
+    classDef endNode fill:#c8e6c9,stroke:#388e3c,stroke-width:1px,color:#000
+```
+
+**Key branches encoded:**
+- `is_existing_cnpj` gate (finding #10) — yes/no path divergence
+- `back_office_optin` checkbox (Q4) — wedge-only vs onboarding cohort
+- Golden-output validation (Step 4 + Step 5) — both gates route to dispute/review queue on fail
+- Trust-protection: first 3 wins per client routed via human review
+- Recurring loop: n8n cron mensal → conciliação → paywall gate at N=3 → push notif on unusual txn
+- Phase 1 endpoints (verde): off-funnel exit, wedge-only customer, paying active, referral (=Phase 2 trigger), Steps 7+ deferred
 
 ---
 

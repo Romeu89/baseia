@@ -633,3 +633,26 @@ Missing infra cumulativa Phase 1 (units 2 + 3 + 4 + 5 + 6) = ~15 itens:
 - Self-test: 30/30 PASS
 
 **Pronto pra Part D — Mermaid flowchart Phase 2.**
+
+### 2026-04-25 — Part D LOCKED — Mermaid flowchart Phase 2 rendered
+
+**Decision:** Mermaid flowchart de Phase 1 inteira (steps 2-6 + branches) substitui seção `## Mermaid flowchart` do CUSTOMER_JOURNEY.md (era PARKED).
+
+**Validação:** Mermaid Chart MCP retornou `valid: true`, diagramType=`flowchart`, SVG ~400kb (rendered). Sintaxe limpa.
+
+**Branches encoded:**
+- `is_existing_cnpj` gate (finding #10): yes → wedge proceed; no → educational + waitlist_optin → off-funnel OR cohort DB.
+- `back_office_optin` checkbox (Q4): false → wedge-only customer (end of journey); true → onboarding (Step 4).
+- Golden-output validation (Step 4 + Step 5): fail → review queue (mesmo loop pra ambos).
+- Trust-protection: first 3 wins per client → forced human review antes de display.
+- Recurring loop (Step 6): n8n cron mensal → conciliação → paywall gate quando N=3 successful → push notif quando unusual txn detectada (cycle).
+- Phase 1 terminal nodes: off-funnel, wedge-only customer, paying active, referral (Phase 2 trigger), full PhaseEnd.
+
+**Trade-offs aceitos:**
+- Trigger context (collapsed unit 1) representado em laranja tracejado pra deixar claro que NÃO é um step real — visual signal de hypothesis.
+- Algumas branches simplificadas (e.g., Step 3 bot triage não mostra all FAQ vs out-of-scope sub-paths) pra preservar leitura.
+- 3 cores: azul=units lockados, laranja=context-only, verde=terminal states.
+
+**Não rendered (deferred Phase 2):**
+- Steps 7+ representados como single endpoint "Steps 7+ = Phase 2".
+- Detalhes internos das branches (e.g., what makes "out of scope" no Step 3) ficam no SDD escalation_rule.
