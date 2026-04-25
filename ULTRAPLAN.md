@@ -1,6 +1,16 @@
 # BaseIA Ultraplan — Phase 1 Close → Phase 5 Execution
 
-> **How to use this file (human instruction, not agent instruction):** Open the `Romeu89/baseia` repo in Cursor. Start a fresh Claude session (Sonnet or Opus). Paste the ENTIRE contents of this file as your first message. The agent will take over from there.
+> **⚠️ CURRENT STATE (2026-04-24) — READ FIRST:**
+>
+> This document is the **original interactive brief**. Parts of it are now **historical** — Decisions 1-3 + sub-wedge flavor are locked, Phase 1 steps 1-2 are locked, scaffolding artifacts exist.
+>
+> **Canonical current state:** [`_shape/AUTONOMOUS_RUN_REPORT.md`](_shape/AUTONOMOUS_RUN_REPORT.md) — Resume Contract at top reconstructs full state in one read.
+>
+> **If you are a remote autonomous agent** (e.g., `/ultraplan` cloud session): do NOT execute this file. Read [`REMOTE_AGENT_BRIEF.md`](REMOTE_AGENT_BRIEF.md) instead — it has the autonomous-safe scope.
+>
+> **If you are an interactive local Claude session** helping Romeu continue Phase 1 interview: read the Resume Contract first, then this file for historical context on the Phase 2-5 constraints you'll apply.
+
+> **Original human instruction (preserved):** Open the `Romeu89/baseia` repo in Cursor. Start a fresh Claude session (Sonnet or Opus). Paste the ENTIRE contents of this file as your first message. The agent will take over from there.
 
 ---
 
