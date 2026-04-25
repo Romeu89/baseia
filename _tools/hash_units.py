@@ -2,12 +2,18 @@
 """
 hash_units.py — drift detector between CUSTOMER_JOURNEY.md Phase 2 table and SDD.md units.
 
-Contract (per ULTRAPLAN.md Phase 4):
+Contract (per ULTRAPLAN.md Phase 4 + finding #7 schema bump 2026-04-25):
 - Parse the Phase 2 table in CUSTOMER_JOURNEY.md. Extract phase_id, customer_action,
-  input, output, decision_buttons per row (skip TBD rows — those are parked placeholders).
+  input, output, decision_buttons, validation_signature per row (skip TBD rows — parked).
 - Recompute unit_hash per row using:
-    sha256(phase_id + "|" + customer_action + "|" + io_signature + "|" + "|".join(sorted(decision_buttons)))
+    sha256(phase_id + "|" + customer_action + "|" + io_signature + "|"
+           + "|".join(sorted(decision_buttons)) + "|" + validation_signature)
   where io_signature = f"IN: {input} | OUT: {output}".
+- validation_signature is canonical structured form parsed from the 9th column
+  "Validation signature" (separate from prose "Validation pattern" in col 8).
+  Format: semicolon-joined pattern_type:args segments, sorted alphabetically.
+  Delimiter is `;` not `|` (pipes break markdown table column parsing).
+  See canonical_validation_signature() for normalization rules.
 - Parse SDD.md. Extract each unit's stored phase_id and unit_hash.
 - Compare. Print drift rows in the format:
     phase_id: <old_hash> -> <new_hash>  REVIEW NEEDED
@@ -58,11 +64,39 @@ def canonical_buttons(raw: str) -> list[str]:
     return sorted(tokens)
 
 
+def canonical_validation_signature(raw: str) -> str:
+    """
+    Normalize the validation_signature cell.
+
+    Canonical form: semicolon-joined `pattern_type:args` segments, sorted alphabetically.
+    Whitespace stripped. Backtick wrappers around individual segments stripped.
+    Empty cells return "". TBD cells return "".
+
+    Delimiter is `;` (not `|`) because pipes break the markdown table column parser.
+
+    Caller hashes the result directly. Input expected near-canonical (human writes
+    segments separated by `;` in journey table cell, optionally backticked);
+    this function enforces sort + whitespace strip + backtick strip for stability.
+    """
+    cleaned = raw.strip()
+    if not cleaned or cleaned.upper().startswith(TBD_MARKER):
+        return ""
+    segments = []
+    for s in cleaned.split(";"):
+        s = s.strip()
+        if s.startswith("`") and s.endswith("`"):
+            s = s[1:-1]
+        if s:
+            segments.append(s)
+    return ";".join(sorted(segments))
+
+
 def compute_hash(
     phase_id: str,
     customer_action: str,
     io_signature: str,
     decision_buttons: list[str],
+    validation_signature: str,
 ) -> str:
     payload = (
         phase_id
@@ -72,6 +106,8 @@ def compute_hash(
         + io_signature
         + "|"
         + "|".join(decision_buttons)
+        + "|"
+        + validation_signature
     )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
@@ -80,9 +116,11 @@ def parse_journey_table(text: str) -> list[dict]:
     """
     Return list of units from the Phase 2 table in CUSTOMER_JOURNEY.md.
 
-    Heuristic: find the table under the '## Phase 2' heading. Table must have 8 columns
+    Heuristic: find the table under the '## Phase 2' heading. Table must have 9 columns
     in the documented order: Step | Customer action | Input | Output | System touchpoint |
-    Communication trigger | Decision/branch buttons | Validation pattern.
+    Communication trigger | Decision/branch buttons | Validation pattern | Validation signature.
+
+    Schema bumped from 8→9 cols on 2026-04-25 per finding #7 (validation_signature in hash).
 
     Skip rows where Step is non-numeric (edge cases), where customer_action contains TBD,
     or where phase_id would collide.
@@ -113,9 +151,9 @@ def parse_journey_table(text: str) -> list[dict]:
         if not line.lstrip().startswith("|"):
             break  # end of table
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if len(cells) < 8:
+        if len(cells) < 9:
             continue
-        step, action, inp, out, touchpoint, comm, buttons, validation = cells[:8]
+        step, action, inp, out, touchpoint, comm, buttons, validation, validation_sig = cells[:9]
 
         # Skip header separators or malformed.
         if not step or step.startswith("-"):
@@ -138,6 +176,7 @@ def parse_journey_table(text: str) -> list[dict]:
                 "communication_trigger": comm,
                 "decision_buttons_raw": buttons,
                 "validation_pattern": validation,
+                "validation_signature_raw": validation_sig,
             }
         )
     return units
@@ -194,7 +233,8 @@ def check_drift(journey_units: list[dict], sdd_hashes: dict[str, str]) -> list[s
         phase_id = unit["phase_id"]
         io_sig = canonical_io(unit["input"], unit["output"])
         buttons = canonical_buttons(unit["decision_buttons_raw"])
-        new_hash = compute_hash(phase_id, unit["customer_action"], io_sig, buttons)
+        val_sig = canonical_validation_signature(unit.get("validation_signature_raw", ""))
+        new_hash = compute_hash(phase_id, unit["customer_action"], io_sig, buttons, val_sig)
         old_hash = sdd_hashes.get(phase_id)
         if old_hash is None:
             # Unit in journey but not in SDD — not a drift; it's a gap. Report separately.
@@ -261,26 +301,56 @@ def run_self_test() -> int:
         canonical_buttons("plain_a / plain_b") == ["plain_a", "plain_b"],
     )
 
+    print("self-test: canonical_validation_signature")
+    check(
+        "val_sig empty",
+        canonical_validation_signature("") == "",
+    )
+    check(
+        "val_sig TBD",
+        canonical_validation_signature("TBD") == "",
+    )
+    check(
+        "val_sig single segment",
+        canonical_validation_signature("metric_threshold:x>=0.5") == "metric_threshold:x>=0.5",
+    )
+    check(
+        "val_sig multiple sorted",
+        canonical_validation_signature("z:a;m:b;a:c") == "a:c;m:b;z:a",
+    )
+    check(
+        "val_sig strips whitespace",
+        canonical_validation_signature("  a:1  ;  b:2  ") == "a:1;b:2",
+    )
+    check(
+        "val_sig strips backticks per segment",
+        canonical_validation_signature("`a:1`;`b:2`") == "a:1;b:2",
+    )
+
     print("self-test: compute_hash")
-    h1 = compute_hash("1", "action", "IN: x | OUT: y", ["a", "b"])
-    h2 = compute_hash("1", "action", "IN: x | OUT: y", ["a", "b"])
+    h1 = compute_hash("1", "action", "IN: x | OUT: y", ["a", "b"], "sig:1")
+    h2 = compute_hash("1", "action", "IN: x | OUT: y", ["a", "b"], "sig:1")
     check("hash deterministic", h1 == h2)
-    h3 = compute_hash("1", "action", "IN: x | OUT: y", ["b", "a"])
+    h3 = compute_hash("1", "action", "IN: x | OUT: y", ["b", "a"], "sig:1")
     check("hash sorted-sensitive (caller must sort)", h3 != h1 or sorted(["a", "b"]) == ["a", "b"])
-    h4 = compute_hash("2", "action", "IN: x | OUT: y", ["a", "b"])
+    h4 = compute_hash("2", "action", "IN: x | OUT: y", ["a", "b"], "sig:1")
     check("hash changes on phase_id", h4 != h1)
-    h5 = compute_hash("1", "ACTION", "IN: x | OUT: y", ["a", "b"])
+    h5 = compute_hash("1", "ACTION", "IN: x | OUT: y", ["a", "b"], "sig:1")
     check("hash case-sensitive on action", h5 != h1)
+    h6 = compute_hash("1", "action", "IN: x | OUT: y", ["a", "b"], "sig:2")
+    check("hash changes on validation_signature", h6 != h1)
+    h7 = compute_hash("1", "action", "IN: x | OUT: y", ["a", "b"], "")
+    check("hash with empty signature still computes", h7 != h1 and len(h7) == 64)
 
     print("self-test: parse_journey_table")
     journey_fixture = (
         "# X\n\n"
         "## Phase 2 — Flowchart table\n\n"
-        "| Step | Customer action | Input | Output | System touchpoint | Communication trigger | Decision/branch buttons | Validation pattern |\n"
-        "|------|-----------------|-------|--------|-------------------|-----------------------|-------------------------|--------------------|\n"
-        "| 1 | act1 | in1 | out1 | sys1 | comm1 | `b1` / `b2` | v1 |\n"
-        "| 2 | act2 | in2 | out2 | sys2 | comm2 | `b3` | v2 |\n"
-        "| 3 | TBD | TBD | TBD | TBD | TBD | TBD | TBD |\n\n"
+        "| Step | Customer action | Input | Output | System touchpoint | Communication trigger | Decision/branch buttons | Validation pattern | Validation signature |\n"
+        "|------|-----------------|-------|--------|-------------------|-----------------------|-------------------------|--------------------|----------------------|\n"
+        "| 1 | act1 | in1 | out1 | sys1 | comm1 | `b1` / `b2` | v1 | sig1:a |\n"
+        "| 2 | act2 | in2 | out2 | sys2 | comm2 | `b3` | v2 | sig2:b |\n"
+        "| 3 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |\n\n"
         "## Next section\n"
     )
     units = parse_journey_table(journey_fixture)
@@ -288,6 +358,7 @@ def run_self_test() -> int:
     check("parse phase_id correct", [u["phase_id"] for u in units] == ["1", "2"])
     check("parse customer_action", units[0]["customer_action"] == "act1")
     check("parse decision_buttons_raw", units[0]["decision_buttons_raw"] == "`b1` / `b2`")
+    check("parse validation_signature_raw", units[0]["validation_signature_raw"] == "sig1:a")
 
     print("self-test: parse_sdd_units")
     sdd_fixture = (
@@ -313,6 +384,7 @@ def run_self_test() -> int:
         "input": "in1",
         "output": "out1",
         "decision_buttons_raw": "`b1` / `b2`",
+        "validation_signature_raw": "sig:a",
     }
     unit_drift = {
         "phase_id": "2",
@@ -320,6 +392,7 @@ def run_self_test() -> int:
         "input": "in2",
         "output": "out2",
         "decision_buttons_raw": "`b3`",
+        "validation_signature_raw": "sig:b",
     }
     unit_missing = {
         "phase_id": "4",
@@ -327,9 +400,10 @@ def run_self_test() -> int:
         "input": "in4",
         "output": "out4",
         "decision_buttons_raw": "`b4`",
+        "validation_signature_raw": "sig:c",
     }
     ok_hash = compute_hash(
-        "1", "act1", canonical_io("in1", "out1"), canonical_buttons("`b1` / `b2`")
+        "1", "act1", canonical_io("in1", "out1"), canonical_buttons("`b1` / `b2`"), "sig:a"
     )
     stored = {"1": ok_hash, "2": "not-matching-hash"}
     drifts = check_drift([unit_ok, unit_drift, unit_missing], stored)

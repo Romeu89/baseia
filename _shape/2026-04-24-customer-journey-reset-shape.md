@@ -317,3 +317,37 @@ Eu tinha afirmado no turn 3 que "steps 3+ da jornada são majoritariamente canal
 **Discovery não-obvia (alimenta finding #7):** unit 2 hash NÃO mudou pós-edit. `_tools/hash_units.py:67` formula é `sha256(phase_id + customer_action + io_signature + sorted(decision_buttons))` — `validation_pattern` e `escalation_rule` ficam fora. Ou seja, mudei a regra de validação core do step e o drift checker não nota. **Isso é exatamente o gap que finding #7 chama** ("hash inclui `validation_pattern`?") — vai ser próxima decisão na queue.
 
 **Split unit 2 em (a) capture + (b) first-payment (research finding #4):** adiado pra finding #2 da queue (unit 1/2 split discussion). Não resolvido aqui.
+
+### 2026-04-25 — Finding #7 LOCKED — schema bump: hash inclui validation_signature
+
+**Decision:** Hash formula extended to include canonical structured `validation_signature` (option C — canonical structure, escolhido por Romeu via AskUserQuestion).
+
+**Schema change:**
+- Phase 2 table grows from 8 → 9 colunas — coluna 9 "Validation signature".
+- SDD unit schema ganha campo `validation_signature` (mandatory, paralelo ao `validation_pattern` prosa).
+- Hash formula: `sha256(phase_id + "|" + customer_action + "|" + io_signature + "|" + sorted_buttons_joined + "|" + validation_signature)`.
+- Delimiter dentro de `validation_signature` é `;` (não `|` — pipes quebram parser de tabela markdown).
+
+**Canonical signature format:**
+- Pipe-segments substituídos por semicolon-segments: `pattern_type:args[;pattern_type:args...]`
+- Sorted alphabetically pra estabilidade.
+- Pattern types do vocab CUSTOMER_JOURNEY.md (6): `schema_assertion`, `golden_output`, `human_checkpoint`, `webhook_callback`, `metric_threshold`, `behavioral_self_report`.
+- Args convention: `metric_threshold:<metric_id><op><value>@<window>` (op ∈ `>=,<=,>,<,==`); outros pattern types levam single args ID.
+
+**Why C (não A nem B):**
+- (A) skip aceita drift checker meio cego — viola rigor de Phase 4.
+- (B) hash full prose: rephrases viram drift fake → agente vai evitar editar prosa → doc rot.
+- (C) hash structured: rephrases livres, mudança de tipo/número trava hash. Verdadeiro testing-as-planning lock.
+
+**Implementação (same-turn):**
+- `_tools/hash_units.py`: nova fn `canonical_validation_signature()` (split em `;`, strip backticks, sort, join). `compute_hash` ganha 5º arg. `parse_journey_table` aceita 9 cols. Self-test fixtures atualizados (30 PASS, era 22).
+- `CUSTOMER_JOURNEY.md`: header tabela 9 cols, units 1+2 com signatures, units 3+ com `TBD`. Texto "8 colunas" virou "9 colunas".
+- `SDD.md`: hash formula doc atualizada, schema example com `validation_signature`, units 1+2 com novo campo + novo `unit_hash`.
+- Hashes recomputadas: unit 1 `d6c59fb5...` → `004ec912...`; unit 2 `af58f450...` → `4f382dbc...`.
+
+**Trade-offs aceitos:**
+- ULTRAPLAN constraint "8 colunas mandatory" agora "9 colunas" — bump deliberado, documentado.
+- Human escreve signature canonical à mão. Risco de inconsistência entre signature e prose `validation_pattern`. Mitigação futura: lint que parser prose pra validar consistência (parked, não bloqueia).
+- Backtick wrap nas signatures cells é cosmético (markdown display) — parser strip-a.
+
+**Drift check pós-implementação:** 2 units, 0 drift, exit 0. Self-test 30/30 PASS.

@@ -3,7 +3,7 @@
 **Status:** Partial lock. Units pros steps 1 e 2 preenchidos. Steps 3+ parked aguardando Phase 1 interview completion.
 **Source (Phase 2 table):** [`CUSTOMER_JOURNEY.md`](CUSTOMER_JOURNEY.md)
 **Drift checker:** [`_tools/hash_units.py`](_tools/hash_units.py)
-**Hash formula:** `sha256(phase_id + "|" + customer_action + "|" + io_signature + "|" + "|".join(sorted(decision_buttons)))`
+**Hash formula (bumped 2026-04-25 finding #7):** `sha256(phase_id + "|" + customer_action + "|" + io_signature + "|" + "|".join(sorted(decision_buttons)) + "|" + validation_signature)` where `validation_signature` is the canonical structured form from journey table col 9 (semicolon-joined `pattern_type:args` segments, sorted alphabetically).
 
 ---
 
@@ -16,11 +16,12 @@ Cada unit tem todos os campos abaixo. `validation_pattern` é MANDATORY (nunca b
   customer_action: <from Phase 2 row>
   io_signature: <canonical "IN: ... | OUT: ...">
   decision_buttons: <sorted list of button identifiers>
-  unit_hash: <sha256 hex>
+  validation_signature: <canonical structured form, semicolon-joined pattern_type:args, sorted; from Phase 2 col 9>
+  unit_hash: <sha256 hex; includes validation_signature per finding #7 bump>
   responsibility: <one sentence — what this unit is accountable for>
   interface: <input/output contract detail>
   ai_role: <none | assist | execute | autonomous>
-  validation_pattern: <how we test this step; from Phase 2 validation_pattern column>
+  validation_pattern: <prose human-readable; from Phase 2 col 8 — NOT hashed, prose-only>
   escalation_rule: <when human takes over>
   dependencies: [<phase_id or unit_hash of prerequisite units>]
 ```
@@ -33,7 +34,8 @@ Cada unit tem todos os campos abaixo. `validation_pattern` é MANDATORY (nunca b
   customer_action: "Solo founder experiencia 1+ dos 4 gatilhos (a/b/c/d)"
   io_signature: "IN: Evento real no mundo (perda de FTE financeiro / erro de conciliação / teto MEI / FOMO competitivo) | OUT: Estado interno mudado: \"preciso resolver sem contratar CLT\""
   decision_buttons: ["which_trigger"]
-  unit_hash: "d6c59fb5c0e02d4d2ad0aa5f06e5f04b7b3aaefa991fe800661c58ec92770f5b"
+  validation_signature: "behavioral_self_report:trigger_select;human_checkpoint:persona_review_other;metric_threshold:other_rate<0.40@2week;metric_threshold:trigger_select_rate>=0.60@onboarding"
+  unit_hash: "004ec912b159e990e90bc0ad86d3ace226899866977d3ad44afb3053a4b51c60"
   responsibility: "Detectar intenção emergente de resolver back-office sem contratar CLT, originada em um dos 4 gatilhos canônicos."
   interface: "Input = evento externo (não observável pelo sistema BaseIA). Output = trigger self-report capturado no primeiro touchpoint downstream (step 2 submission)."
   ai_role: "none"
@@ -45,7 +47,8 @@ Cada unit tem todos os campos abaixo. `validation_pattern` é MANDATORY (nunca b
   customer_action: "Solo founder encontra wedge \"Regularizar CNPJ grátis\" e clica pro landing"
   io_signature: "IN: Search intent OR referral link OR anúncio paid OR founder content | OUT: User na wedge landing page com intent explícita de regularizar CNPJ"
   decision_buttons: ["learn_more", "start_regularization", "talk_to_human"]
-  unit_hash: "af58f450d1761704b37b2fafb05fd42776ccb81ed600a739b72b66336d50a8bc"
+  validation_signature: "golden_output:headline_ab_retention_d7;metric_threshold:landing_to_submit_conversion>=0.08@500sess;webhook_callback:submit_event_capture"
+  unit_hash: "4f382dbcd79c6f54d29f2a932f362a8e3e0fca2b13f376cc0c005593280c8eb5"
   responsibility: "Capturar intenção explícita de regularizar CNPJ via landing page do wedge, com self-report do trigger e variant da headline."
   interface: "Input = sessão de user com intent discovery-stage. Output = record no DB com {email, CNPJ, trigger_self_report, headline_variant, timestamp}, evento webhook downstream."
   ai_role: "assist"
