@@ -45,6 +45,19 @@ Cada unit tem todos os campos abaixo. `validation_pattern` é MANDATORY (nunca b
   escalation_rule: "(1) Conversion <8% após 500 sessões completas → halt paid acquisition; rotate creative; Romeu aprova nova variant. (2) Se `is_existing_cnpj`=no representar ≥30% das sessões sustentado, sinaliza canal misalign (atraindo pre-revenue não-ICP) — Romeu revisa headlines/keywords."
   dependencies: []
 
+- phase_id: "3"
+  customer_action: "Solo founder recebe email auto-responder com next steps da regularização (D0); pode clicar status link ou responder pra tiered handler"
+  io_signature: "IN: Submission record da unit 2 — {email, CNPJ, trigger_self_report, headline_variant, timestamp} | OUT: Auto-responder email enviado D0 + tiered reply handler ativo (bot triagem + escalation Romeu/contador)"
+  decision_buttons: ["click_status_link", "reply_email"]
+  validation_signature: "human_checkpoint:bot_escalation_to_romeu;metric_threshold:auto_responder_reply_rate>=0.10@500submits;webhook_callback:email_send_event;webhook_callback:reply_received_event"
+  unit_hash: "c5e3a6b48d96132dad01dc966a76bbf277828dc5212f4c7d85fc34e2fa8723cc"
+  responsibility: "Estabelecer primeiro contato pós-submit via email transactional + provisionar canal de reply tiered (bot+humano) pra dúvidas, sem founder load."
+  interface: "Input = unit 2 submission record. Output (immediate D0) = email enviado via Resend com template trigger-specific. Output (post-D0, eventual) = reply do user roteado pra bot triagem (n8n+Anthropic); confidence/scope check; escalation pra Romeu/contador inbox quando bot insuficiente."
+  ai_role: "assist"
+  validation_pattern: "(1) Metric threshold: auto-responder reply rate ≥10% medido sobre janela de 500 submits (= 500 emails enviados D0). Threshold preliminary; revisitar após 1ª medição real (sem benchmark BR-fintech específico, US B2B SaaS auto-responder reply ~5-15% wild). (2) Webhook callback (n8n-style) no email_send (D0) captura template+trigger. (3) Webhook callback no reply_received captura conteúdo + roteamento pro bot. (4) Human checkpoint: bot escala pra Romeu/contador quando confidence baixo ou scope out-of-FAQ."
+  escalation_rule: "(1) Reply rate <10% em 500 submits → halt envio + revisar copy do auto-responder; Romeu aprova nova variant. (2) Bot escalation rate >50% sustentado → FAQ coverage gap; Romeu/contador expandem scripts do bot. (3) Confidence baixo no bot triagem → escalation imediata (single user)."
+  dependencies: ["2"]
+
 ---
 
 ## TBD units (parked)
@@ -57,11 +70,6 @@ Steps 3+ do Phase 2 table estão marcados TBD aguardando Phase 1 interview inter
 4. Rodar drift check de novo — deve exit 0.
 
 **Unidades pendentes (placeholders):**
-
-- phase_id: "3"
-  customer_action: TBD — Phase 1 interview incomplete
-  unit_hash: TBD
-  validation_pattern: TBD
 
 - phase_id: "4"
   customer_action: TBD

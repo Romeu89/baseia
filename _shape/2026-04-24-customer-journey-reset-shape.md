@@ -446,3 +446,66 @@ Tudo isso vira validation_signature do future onboarding unit, não do step 2.
 - All 5 findings de blocking/important resolvidos. Findings minor (#4, #5, #6, #8, #9) ficam em PR separado depois.
 
 **Pronto pra Part C** — Phase 1 interview steps 3+ TDD-style com onboarding unit como primeira meta (capture pendente do collapse).
+
+### 2026-04-25 — Phase 1 interview Q1 — Step 3 first-contact = auto-responder email (zero human touch)
+
+**Decision:** Step 3 customer experience nos primeiros 5min pós-submit = **email auto-responder com next steps da regularização, zero human touch** (script PHASE1_INTERVIEW_SCRIPT.md Q1 option A).
+
+**Why (Romeu's choice + agent rationale):**
+- Cheap, scales. Não trava em Romeu's calendar (option B founder-led não escala >20 clientes).
+- Não assume back-office product já built (option D requer sandbox real).
+- Não distrai do wedge purpose (option C tour misto wedge+product).
+
+**Trade-off aceito:** zero human signal no D0 → engagement risk. Mitigação: D7 retention metric da unit 2 vai sinalizar se cohort tá engajada ou não. Se D7 < threshold, revisitar option B/C.
+
+**Implicações pra journey row 3 (parciais — locking depende de Q2/Q3):**
+- Customer action: "Solo founder recebe email auto-responder com próximos passos da regularização (D0)"
+- Input: tudo de unit 2 output (submission record)
+- Output: User aware da timeline de regularização + link pra status page + ciência de próximas ações (TBD detail)
+- System touchpoint: Email transactional service (SES / Resend / outro)
+- Comm trigger: webhook on unit 2 submit → template selecionado por `trigger_self_report` (a/c → operacional, b → controle, d → educativa, other → discovery)
+
+**Locked depois de Q2 (ai_role + escalation) + Q3 (validation pattern).**
+
+### 2026-04-25 — Phase 1 interview Q2 — Step 3 reply ownership = Tiered (bot triagem + Romeu/contador escalation)
+
+**Decision:** Q2 option C — AI bot triagem em primeira linha (FAQs, status, prazos, docs) com escalation pra Romeu/contador em out-of-scope/low-confidence. Stack: n8n + Anthropic Haiku 4.5 (low-latency).
+
+**Why C:**
+- A (Romeu pessoalmente) trava founder; cap ~20 clientes.
+- B (bot solo) alto risco de fail em CNPJ edge cases (burocracia BR é unique-case heavy).
+- D (pure self-serve) coerente com Q1=A levado ao limite mas sem human channel mata persona low-literacy.
+- C balanceia: bot escala FAQs comuns; human pega substância.
+
+**ai_role unit 3 = `assist`** — AI auxilia (triagem) mas humano decide substância em escalation.
+
+**Trade-off aceito:** bot infra build cost (n8n workflow + Anthropic + FAQ KB editável + inbox unificada). Vai virar item Phase 5 missing_infra. Mitigação: stack já familiar (n8n/Anthropic em uso na BaseIA).
+
+### 2026-04-25 — Phase 1 interview Q3 — Step 3 validation primary = reply rate ≥10% @ 500 submits
+
+**Decision:** Validation pattern primary = **auto-responder reply rate ≥10% medido sobre janela de 500 submits**. Window-aligned com unit 2 (volume-anchored).
+
+**Why B:**
+- E (D7 retention) já é métrica unit 2 — diluição de signal.
+- D (regularization completion) atravessa Steps 3-5; não isolado a Step 3.
+- C/A requerem infra extra (doc upload / cal link) fora de scope Step 3 imediato.
+- B é métrica natural pra auto-responder; reply é signal de engagement (mesmo com ambiguidade signal-to-noise).
+
+**Threshold preliminary:** 10% (mid-band B2B SaaS auto-responder reply rate ~5-15% wild). Sem benchmark BR específico — revisita após 1ª medição real.
+
+**Não adicionado: bot deflection rate como secondary** (option B+secondary). Romeu picked plain B. Deflection vai pra escalation_rule como sub-monitor (>50% sustentado → FAQ gap).
+
+### 2026-04-25 — Step 3 LOCKED — auto-responder + tiered handler
+
+**Unit 3 lockado** com schema completo:
+- phase_id: "3"
+- decision_buttons: `click_status_link`, `reply_email`
+- validation_signature: `human_checkpoint:bot_escalation_to_romeu;metric_threshold:auto_responder_reply_rate>=0.10@500submits;webhook_callback:email_send_event;webhook_callback:reply_received_event`
+- unit_hash: `c5e3a6b48d96132dad01dc966a76bbf277828dc5212f4c7d85fc34e2fa8723cc`
+- ai_role: `assist`
+- dependencies: ["2"]
+- AI_EXECUTION_MAP classification: `ai_executable_at_scale` (model_pattern Haiku 4.5 bot triagem + Resend send)
+
+**Locked units count: 1 → 2** (phase_id 2 + 3). Drift 0, exit 0.
+
+**Próximo: Step 4** — Q4 (wedge-to-product transition) + Q5 (first-login state) + Q6 (auto vs approval).
